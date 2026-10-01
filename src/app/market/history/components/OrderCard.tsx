@@ -44,6 +44,7 @@ import SaleDetailClient from '@/components/sale/SaleDetailClient'
 import ContractTemplate from '@/components/sale/ContractTemplate'
 import { getContractView } from '@/actions/contract'
 import { getAll } from '@/actions/paymentMethods'
+import { isWip } from '@/utils/mappers/mapPaymentMethodToData'
 import type { SaleData, PaymentMethodsData } from '@/types/types'
 
 export type OrderItemView = {
@@ -150,7 +151,7 @@ export default React.memo(function OrderCard({ order, saleData }: { order: Order
         setLoadingMethods(true)
         try {
             const methods = await getAll()
-            setPaymentMethods(methods)
+            setPaymentMethods(methods.filter((m: PaymentMethodsData) => !isWip(m.method.toLowerCase())))
             setSelectedMethodId(order.paymentMethodId)
         } finally {
             setLoadingMethods(false)

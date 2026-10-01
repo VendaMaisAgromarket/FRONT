@@ -18,7 +18,8 @@ interface CardPaymentProps {
 // backend, e a decisão de negócio foi aguardar uma tokenização client-side
 // segura antes de reabilitar este formulário (ver isWip em
 // mapPaymentMethodToData.tsx, que já bloqueia a seleção deste método).
-export default function CardPayment({ }: CardPaymentProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function CardPayment(props: CardPaymentProps) {
     const router = useRouter();
 
     return (

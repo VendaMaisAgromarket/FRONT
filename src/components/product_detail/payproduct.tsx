@@ -29,6 +29,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { isWip } from '@/utils/mappers/mapPaymentMethodToData';
 import ProductDetailImagesViewer from './ProductDetailImagesViewer';
 
 type ProductBuyingInfo = {
@@ -187,19 +188,28 @@ const CompraProduto = ({
 					</div>
 
 					<Accordion type="single" collapsible className="w-full">
-						<AccordionItem value="item-1">
+						<AccordionItem value="item-1" disabled={isWip('cartão')}>
 							<AccordionTrigger className="font-medium">
 								Cartão de Crédito
 							</AccordionTrigger>
 							<AccordionContent>
-								<p className="text-sm text-gray-600">
-									Até 12x sem juros. Parcela mínima de R$ 5,00.
-								</p>
-								<div className="flex gap-2 mt-2">
-									<div className="bg-gray-100 rounded p-1">Visa</div>
-									<div className="bg-gray-100 rounded p-1">Mastercard</div>
-									<div className="bg-gray-100 rounded p-1">Elo</div>
-								</div>
+								{isWip('cartão') ? (
+									<p className="text-sm text-gray-600">
+										Em breve. Estamos finalizando a integração segura com o novo
+										gateway de pagamento.
+									</p>
+								) : (
+									<>
+										<p className="text-sm text-gray-600">
+											Até 12x sem juros. Parcela mínima de R$ 5,00.
+										</p>
+										<div className="flex gap-2 mt-2">
+											<div className="bg-gray-100 rounded p-1">Visa</div>
+											<div className="bg-gray-100 rounded p-1">Mastercard</div>
+											<div className="bg-gray-100 rounded p-1">Elo</div>
+										</div>
+									</>
+								)}
 							</AccordionContent>
 						</AccordionItem>
 
