@@ -43,7 +43,7 @@ export async function createPaymentPreference(params: CreatePaymentPreferencePar
 			success: true,
 			data: {
 				paymentId: data.paymentId,
-				mp_preference_id: data.mp_preference_id,
+				asaas_payment_id: data.asaas_payment_id,
 				init_point: data.init_point,
 			},
 		};

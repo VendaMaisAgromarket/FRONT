@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 		const data = await res.json();
 
 		if (!res.ok) {
-			// Passar a mensagem de erro do backend, especialmente para erros do Mercado Pago
+			// Passar a mensagem de erro do backend, especialmente para erros do gateway de pagamento
 			const errorMessage = data.message || data.error || "Erro ao criar preferência de pagamento";
 			return NextResponse.json(
 				{

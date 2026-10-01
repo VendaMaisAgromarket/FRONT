@@ -31,14 +31,13 @@ export function isValidPaymentUrl(url: string): boolean {
 	if (typeof url !== 'string' || !url) return false;
 	try {
 		const urlObj = new URL(url);
-		// Permitir apenas HTTPS ou localhost para desenvolvimento
-		return (
-			urlObj.protocol === 'https:' ||
-			urlObj.hostname === 'localhost' ||
-			urlObj.hostname === '127.0.0.1' ||
-			urlObj.hostname.includes('mercadopago.com.br') ||
-			urlObj.hostname.includes('mercadopago.com')
-		);
+		// localhost é permitido só para desenvolvimento (qualquer protocolo).
+		// Para produção, exige HTTPS E hostname na allowlist do gateway —
+		// nunca aceitar HTTPS arbitrário nem o gateway em HTTP puro.
+		const isLocalDev = urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1';
+		const isTrustedGatewayHost =
+			urlObj.hostname === 'asaas.com' || urlObj.hostname.endsWith('.asaas.com');
+		return isLocalDev || (urlObj.protocol === 'https:' && isTrustedGatewayHost);
 	} catch {
 		return false;
 	}

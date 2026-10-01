@@ -3,6 +3,7 @@
 import { signInSchema, SignUpFormValues } from "@/lib/schemas";
 import { createSession } from "@/lib/session";
 import { SignInFormState } from "@/types/types";
+import mapUserTypeToRole from "@/utils/mappers/userTypeToRole";
 import { jwtDecode } from "jwt-decode";
 import z from "zod";
 
@@ -71,6 +72,14 @@ export async function signUp(data: SignUpFormValues) {
 		secondSecurityQuestion,
 		thirdSecurityQuestion,
 		cpfCnpj,
+		// Confirmação de senha e aceite de termos são validados/usados só no
+		// frontend — o backend não tem esses campos, não devem ser enviados.
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		confirmPassword,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		acceptPrivacyPolicy,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		acceptTermsOfUse,
 		...rest
 	} = data;
 
@@ -83,7 +92,7 @@ export async function signUp(data: SignUpFormValues) {
 			answer_2: secondSecurityQuestion,
 			answer_3: thirdSecurityQuestion,
 		},
-		role: userType,
+		role: mapUserTypeToRole(userType),
 		...docField,
 	};
 
