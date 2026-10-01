@@ -178,7 +178,7 @@ export default function PaymentPage() {
                 let errorMessage = 'Erro ao criar pagamento'
                 if (result.message) {
                     errorMessage = result.message.includes('UNAUTHORIZED')
-                        ? 'Erro de autenticação com o Mercado Pago. Verifique a configuração do token de acesso.'
+                        ? 'Erro de autenticação com o gateway de pagamento. Verifique a configuração do token de acesso.'
                         : result.message
                 } else if (result.error) {
                     errorMessage = result.error

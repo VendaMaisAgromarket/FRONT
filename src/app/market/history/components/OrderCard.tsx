@@ -110,7 +110,7 @@ export default React.memo(function OrderCard({ order, saleData }: { order: Order
     const [finalBoletoOpen, setFinalBoletoOpen] = useState(false)
     const [finalAmount, setFinalAmount] = useState<number | null>(null)
     const [loadingFinalAmount, setLoadingFinalAmount] = useState(false)
-    const [finalBoletoResult, setFinalBoletoResult] = useState<{ ticket_url?: string; digitable_line?: string } | null>(null)
+    const [finalBoletoResult, setFinalBoletoResult] = useState<{ invoice_url?: string; digitable_line?: string } | null>(null)
     const [generatingFinalBoleto, setGeneratingFinalBoleto] = useState(false)
     const [finalBoletoError, setFinalBoletoError] = useState<string | null>(null)
     // Dados frescos do pedido para garantir cargoWeightKg atualizado ao abrir o dialog
@@ -272,10 +272,10 @@ export default React.memo(function OrderCard({ order, saleData }: { order: Order
                     ...(finalAmount != null && { amount: finalAmount }),
                 }),
             })
-            const data = await res.json() as { error?: string; payment?: { ticket_url?: string; digitable_line?: string } }
+            const data = await res.json() as { error?: string; payment?: { invoice_url?: string; digitable_line?: string } }
             if (!res.ok) throw new Error(data.error ?? 'Erro ao gerar boleto')
             setFinalBoletoResult({
-                ticket_url: data.payment?.ticket_url,
+                invoice_url: data.payment?.invoice_url,
                 digitable_line: data.payment?.digitable_line,
             })
         } catch (e: unknown) {
@@ -617,9 +617,9 @@ export default React.memo(function OrderCard({ order, saleData }: { order: Order
                                     <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                                     Boleto gerado com sucesso!
                                 </div>
-                                {finalBoletoResult.ticket_url && (
+                                {finalBoletoResult.invoice_url && (
                                     <a
-                                        href={finalBoletoResult.ticket_url}
+                                        href={finalBoletoResult.invoice_url}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-2 justify-center w-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-md"

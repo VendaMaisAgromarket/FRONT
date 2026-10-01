@@ -203,17 +203,6 @@ const CompraProduto = ({
 							</AccordionContent>
 						</AccordionItem>
 
-						<AccordionItem value="item-2">
-							<AccordionTrigger className="font-medium">
-								Cartão de Débito
-							</AccordionTrigger>
-							<AccordionContent>
-								<p className="text-sm text-gray-600">
-									Pagamento instantâneo com seu cartão de débito.
-								</p>
-							</AccordionContent>
-						</AccordionItem>
-
 						<AccordionItem value="item-3">
 							<AccordionTrigger className="font-medium">
 								Boleto Bancário

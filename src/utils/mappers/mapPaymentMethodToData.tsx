@@ -27,6 +27,9 @@ const paymentMethods: PaymentMethod[] = [
 		method: 'cartão',
 		icon: <CreditCard size={16} className="text-neutral-300" />,
 		description: 'Parcelamento em até 24x.',
+		// Aguardando decisão de tokenização client-side com o novo gateway
+		// de pagamento antes de habilitar o pagamento com cartão.
+		wip: true,
 	},
 	{
 		method: 'boleto',

@@ -36,8 +36,8 @@ export function isValidPaymentUrl(url: string): boolean {
 			urlObj.protocol === 'https:' ||
 			urlObj.hostname === 'localhost' ||
 			urlObj.hostname === '127.0.0.1' ||
-			urlObj.hostname.includes('mercadopago.com.br') ||
-			urlObj.hostname.includes('mercadopago.com')
+			urlObj.hostname.endsWith('.asaas.com') ||
+			urlObj.hostname === 'asaas.com'
 		);
 	} catch {
 		return false;

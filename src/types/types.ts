@@ -383,15 +383,13 @@ export type PixPaymentParams = {
 
 export type PixPaymentResponse = {
 	paymentId: string;
-	orderId: string;
-	orderStatus: string;
+	asaas_payment_id: string;
 	payment: {
 		id: string;
 		status: string;
-		status_detail: string;
 		qr_code?: string;
 		qr_code_base64?: string;
-		ticket_url?: string;
+		expiration_date?: string;
 	};
 };
 
@@ -402,17 +400,14 @@ export type PaymentSyncResponse = {
 	payment?: {
 		id: string;
 		status: string;
-		mp_payment_id: string;
-		mp_status: string;
-		mp_status_detail: string;
+		asaas_payment_id: string;
 	};
-	mercadopago?: {
-		id: number;
+	asaas?: {
+		id: string;
 		status: string;
-		status_detail: string;
-		transaction_amount: number;
-		date_approved: string;
-		date_created: string;
+		value: number;
+		paymentDate?: string;
+		dueDate?: string;
 	};
 };
 
@@ -425,38 +420,53 @@ export type BoletoPaymentParams = {
 
 export type BoletoPaymentResponse = {
 	paymentId: string;
-	orderId: string;
-	orderStatus: string;
+	asaas_payment_id: string;
 	payment: {
 		id: string;
 		status: string;
-		status_detail: string;
-		ticket_url: string;
-		barcode_content: string;
-		digitable_line: string;
-		financial_institution: string;
+		invoice_url: string;
 		expiration_date: string;
+		/** Pendente: Asaas não retorna mais estes campos; aguardando endpoint extra de linha digitável */
+		barcode_content?: string;
+		digitable_line?: string;
 	};
 };
 
+// POST /payment/card (Asaas) — dados de cartão em claro; aguardando decisão
+// de tokenização client-side antes de habilitar o formulário no frontend.
 export type CardPaymentParams = {
 	saleId: string;
 	paymentMethodId: string;
 	amount: number;
-	token: string;
-	installments: number;
-	paymentMethodType: string;
-	cardPaymentMethodId: string;
+	phase?: 'down_payment' | 'final_payment' | 'full';
+	installmentCount?: number;
+	creditCard: {
+		holderName: string;
+		number: string;
+		expiryMonth: string;
+		expiryYear: string;
+		ccv: string;
+	};
+	creditCardHolderInfo: {
+		name: string;
+		email: string;
+		cpfCnpj: string;
+		postalCode: string;
+		addressNumber: string;
+		phone: string;
+	};
 };
 
 export type CardPaymentResponse = {
 	paymentId: string;
-	orderId: string;
-	orderStatus: string;
+	asaas_payment_id: string;
+	status: string;
+	phase?: string;
 	payment: {
 		id: string;
 		status: string;
-		status_detail: string;
+		brand?: string;
+		lastDigits?: string;
 	};
 };
 

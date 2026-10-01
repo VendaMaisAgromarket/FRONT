@@ -21,10 +21,8 @@ export default function BoletoPayment({ paymentData, onSuccess, phase }: BoletoP
 
     const {
         digitable_line,
-        ticket_url,
+        invoice_url,
         expiration_date,
-        financial_institution,
-        id: paymentId
     } = paymentData.payment;
 
     // Polling para verificar status
@@ -66,6 +64,7 @@ export default function BoletoPayment({ paymentData, onSuccess, phase }: BoletoP
     }, [status, paymentData.paymentId, onSuccess, router]);
 
     const copyToClipboard = () => {
+        if (!digitable_line) return;
         navigator.clipboard.writeText(digitable_line);
         toast.success("Linha digitável copiada!");
     };
@@ -163,37 +162,40 @@ export default function BoletoPayment({ paymentData, onSuccess, phase }: BoletoP
             <CardContent className="space-y-6">
                 <div className="text-center space-y-2">
                     <p className="text-sm text-gray-600">
-                        Banco: <span className="font-medium text-gray-900">{financial_institution || "Mercado Pago"}</span>
-                    </p>
-                    <p className="text-sm text-gray-600">
                         Vencimento: <span className="font-medium text-red-600">
                             {new Date(expiration_date).toLocaleDateString('pt-BR')}
                         </span>
                     </p>
                 </div>
 
-                <div className="space-y-3">
-                    <label className="text-sm font-medium text-gray-700 block">
-                        Linha Digitável
-                    </label>
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            readOnly
-                            value={digitable_line}
-                            className="flex-1 px-3 py-2 border rounded-md text-sm bg-gray-50 text-gray-600 focus:outline-none font-mono"
-                        />
-                        <Button size="icon" variant="outline" onClick={copyToClipboard}>
-                            <Copy className="h-4 w-4" />
-                        </Button>
+                {digitable_line ? (
+                    <div className="space-y-3">
+                        <label className="text-sm font-medium text-gray-700 block">
+                            Linha Digitável
+                        </label>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                readOnly
+                                value={digitable_line}
+                                className="flex-1 px-3 py-2 border rounded-md text-sm bg-gray-50 text-gray-600 focus:outline-none font-mono"
+                            />
+                            <Button size="icon" variant="outline" onClick={copyToClipboard}>
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <p className="text-xs text-center text-gray-500">
+                        Use o botão abaixo para visualizar o boleto e obter a linha digitável.
+                    </p>
+                )}
 
                 <div className="flex flex-col gap-3">
                     <Button
                         className="w-full gap-2"
                         variant="outline"
-                        onClick={() => window.open(ticket_url, '_blank')}
+                        onClick={() => window.open(invoice_url, '_blank')}
                     >
                         <ExternalLink className="h-4 w-4" />
                         Visualizar/Imprimir Boleto
