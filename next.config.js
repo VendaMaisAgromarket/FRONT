@@ -9,7 +9,7 @@ module.exports = {
 		remotePatterns: [
 			{
 				protocol: 'https',
-				hostname: 'vendamaisagromarket.s3.us-east-2.amazonaws.com',
+				hostname: process.env.BUCKET_HOSTNAME || 'vendamaisagromarket.s3.us-east-2.amazonaws.com',
 				port: '',
 				pathname: '/**',
 			},
