@@ -15,12 +15,7 @@ export default function AdminModeSwitch({ className }: AdminModeSwitchProps) {
 
 	return (
 		<div className={cn("flex items-center gap-2", className)}>
-			<span
-				className={cn(
-					"text-xs font-medium",
-					isAdminMode ? "text-foreground/70" : "text-destructive"
-				)}
-			>
+			<span className="text-xs font-medium text-foreground/70">
 				{isAdminMode ? "Admin" : "Usuário"}
 			</span>
 			<Switch
@@ -28,7 +23,6 @@ export default function AdminModeSwitch({ className }: AdminModeSwitchProps) {
 				onCheckedChange={(checked) =>
 					router.push(checked ? "/admin/executive-overview" : "/market")
 				}
-				className="data-[state=checked]:bg-gray-400 data-[state=unchecked]:bg-destructive"
 				aria-label={
 					isAdminMode ? "Sair do modo administrador" : "Entrar no modo administrador"
 				}
