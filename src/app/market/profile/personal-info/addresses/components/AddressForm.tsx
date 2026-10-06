@@ -355,7 +355,7 @@ const [ufs] = useFetchUfs();
 					render={({ field }) => (
 						<FormItem>
 							<FormLabel>
-								Nome do Destinatário <span className="text-red-500">*</span>
+								Nome do Responsável <span className="text-red-500">*</span>
 							</FormLabel>
 							<FormControl>
 								<Input

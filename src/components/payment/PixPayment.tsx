@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Copy, CheckCircle, XCircle, ExternalLink } from "lucide-react";
+import { Loader2, Copy, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PixPaymentResponse, PaymentSyncResponse } from "@/types/types";
 import { useRouter } from "next/navigation";
@@ -19,7 +19,7 @@ export default function PixPayment({ paymentData, onSuccess, phase }: PixPayment
     const [status, setStatus] = useState<string>(paymentData.payment.status);
     const [cancelling, setCancelling] = useState(false);
 
-    const { qr_code, qr_code_base64, ticket_url } = paymentData.payment;
+    const { qr_code, qr_code_base64, expiration_date } = paymentData.payment;
 
     // Polling para verificar status
     useEffect(() => {
@@ -184,15 +184,10 @@ export default function PixPayment({ paymentData, onSuccess, phase }: PixPayment
                 </div>
 
                 <div className="pt-4 flex flex-col gap-3">
-                    {ticket_url && (
-                        <Button
-                            variant="outline"
-                            className="w-full gap-2"
-                            onClick={() => window.open(ticket_url, '_blank')}
-                        >
-                            <ExternalLink className="h-4 w-4" />
-                            Abrir página de pagamento
-                        </Button>
+                    {expiration_date && (
+                        <p className="text-xs text-center text-gray-500">
+                            Expira em {new Date(expiration_date).toLocaleString('pt-BR')}
+                        </p>
                     )}
 
                     <div className="flex items-center justify-center gap-2 text-sm text-blue-600 bg-blue-50 p-3 rounded-md">

@@ -13,6 +13,7 @@ import PixPayment from '@/components/payment/PixPayment'
 import BoletoPayment from '@/components/payment/BoletoPayment'
 import CardPayment from '@/components/payment/CardPayment'
 import { getAll } from '@/actions/paymentMethods'
+import { isWip } from '@/utils/mappers/mapPaymentMethodToData'
 import {
     Dialog,
     DialogContent,
@@ -178,7 +179,7 @@ export default function PaymentPage() {
                 let errorMessage = 'Erro ao criar pagamento'
                 if (result.message) {
                     errorMessage = result.message.includes('UNAUTHORIZED')
-                        ? 'Erro de autenticação com o Mercado Pago. Verifique a configuração do token de acesso.'
+                        ? 'Erro de autenticação com o gateway de pagamento. Verifique a configuração do token de acesso.'
                         : result.message
                 } else if (result.error) {
                     errorMessage = result.error
@@ -219,7 +220,7 @@ export default function PaymentPage() {
         setLoadingMethods(true)
         try {
             const methods = await getAll()
-            setPaymentMethods(methods)
+            setPaymentMethods(methods.filter((m: PaymentMethodsData) => !isWip(m.method.toLowerCase())))
             setSelectedMethodId(sale?.paymentMethodId ?? '')
         } finally {
             setLoadingMethods(false)

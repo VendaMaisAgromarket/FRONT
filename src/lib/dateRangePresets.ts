@@ -2,9 +2,9 @@ export type DatePreset = "today" | "7d" | "15d" | "30d";
 
 export const DATE_PRESET_OPTIONS: { key: DatePreset; label: string }[] = [
 	{ key: "today", label: "Hoje" },
-	{ key: "7d", label: "Últimos 7 dias" },
-	{ key: "15d", label: "Últimos 15 dias" },
-	{ key: "30d", label: "Últimos 30 dias" },
+	{ key: "7d", label: "7 dias" },
+	{ key: "15d", label: "15 dias" },
+	{ key: "30d", label: "30 dias" },
 ];
 
 const PRESET_DAYS: Record<DatePreset, number> = {

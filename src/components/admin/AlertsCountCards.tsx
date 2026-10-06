@@ -1,5 +1,5 @@
 import { AlertsCounts } from "@/types/types";
-import { AlertTriangle, CalendarClock, FileText, LucideIcon, Truck } from "lucide-react";
+import { AlertTriangle, FileSignature, FileText, Lock, LucideIcon, Truck } from "lucide-react";
 
 const ALERT_LABELS: {
 	key: keyof AlertsCounts;
@@ -14,8 +14,8 @@ const ALERT_LABELS: {
 		iconClassName: "bg-destructive/10 text-destructive",
 	},
 	{
-		key: "semUploadDocumentos",
-		label: "Sem documentos",
+		key: "documentosPendentes",
+		label: "Documentos pendentes",
 		icon: FileText,
 		iconClassName: "bg-attention/10 text-attention",
 	},
@@ -26,10 +26,16 @@ const ALERT_LABELS: {
 		iconClassName: "bg-attention/10 text-attention",
 	},
 	{
-		key: "pagamentoVencido",
-		label: "Pagamento vencido",
-		icon: CalendarClock,
+		key: "bloqueadas",
+		label: "Bloqueadas",
+		icon: Lock,
 		iconClassName: "bg-destructive/10 text-destructive",
+	},
+	{
+		key: "semTermoAditivo",
+		label: "Sem termo aditivo",
+		icon: FileSignature,
+		iconClassName: "bg-info/10 text-info",
 	},
 ];
 
@@ -39,7 +45,7 @@ type AlertsCountCardsProps = {
 
 export default function AlertsCountCards({ counts }: AlertsCountCardsProps) {
 	return (
-		<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+		<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
 			{ALERT_LABELS.map(({ key, label, icon: Icon, iconClassName }) => (
 				<div key={key} className="rounded-xl border border-border bg-white p-4">
 					<div className="flex items-center gap-2.5">

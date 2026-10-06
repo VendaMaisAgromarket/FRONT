@@ -56,6 +56,11 @@ export async function getPipeline(params?: {
   startDate?: string;
   endDate?: string;
   stage?: string;
+  blocked?: boolean;
+  produto?: string;
+  comprador?: string;
+  vendedor?: string;
+  tipoOperacao?: string;
 }): Promise<PipelineResult> {
   const cookieStore = await cookies();
   const session = cookieStore.get("session")?.value;
@@ -67,6 +72,11 @@ export async function getPipeline(params?: {
   if (params?.startDate) url.searchParams.set("startDate", params.startDate);
   if (params?.endDate) url.searchParams.set("endDate", params.endDate);
   if (params?.stage) url.searchParams.set("stage", params.stage);
+  if (params?.blocked) url.searchParams.set("blocked", "true");
+  if (params?.produto) url.searchParams.set("produto", params.produto);
+  if (params?.comprador) url.searchParams.set("comprador", params.comprador);
+  if (params?.vendedor) url.searchParams.set("vendedor", params.vendedor);
+  if (params?.tipoOperacao) url.searchParams.set("tipoOperacao", params.tipoOperacao);
 
   const res = await fetch(url, {
     method: "GET",
@@ -89,13 +99,25 @@ export type AlertsResult =
   | { ok: true; data: AlertsResponse }
   | { ok: false; status: number };
 
-export async function getAlerts(params?: { limit?: number }): Promise<AlertsResult> {
+export async function getAlerts(params?: {
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+  categoria?: string;
+  criticidade?: string;
+  parceiro?: string;
+}): Promise<AlertsResult> {
   const cookieStore = await cookies();
   const session = cookieStore.get("session")?.value;
   await verifySession(session);
 
   const url = new URL(`${process.env.NEXT_PUBLIC_URL}/api/dashboard/alerts`);
-  if (params?.limit) url.searchParams.set("limit", String(params.limit));
+  if (params?.limit != null) url.searchParams.set("limit", String(params.limit));
+  if (params?.startDate) url.searchParams.set("startDate", params.startDate);
+  if (params?.endDate) url.searchParams.set("endDate", params.endDate);
+  if (params?.categoria) url.searchParams.set("categoria", params.categoria);
+  if (params?.criticidade) url.searchParams.set("criticidade", params.criticidade);
+  if (params?.parceiro) url.searchParams.set("parceiro", params.parceiro);
 
   const res = await fetch(url, {
     method: "GET",

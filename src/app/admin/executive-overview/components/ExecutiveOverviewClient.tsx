@@ -6,7 +6,7 @@ import ForecastBarChart from "@/components/admin/ForecastBarChart";
 import { KpiCard } from "@/components/admin/KpiCard";
 import OriginDestinationTable from "@/components/admin/OriginDestinationTable";
 import PartyRankingTable from "@/components/admin/PartyRankingTable";
-import PipelineFunnel from "@/components/admin/PipelineFunnel";
+import PipelineFunnelSteps from "@/components/admin/PipelineFunnelSteps";
 import ProductRevenueDonut from "@/components/admin/ProductRevenueDonut";
 import { Button } from "@/components/ui/button";
 import {
@@ -72,7 +72,7 @@ function errorMessage(status: number) {
 export default function ExecutiveOverviewClient() {
 	const [filters, setFilters] = useState<EntityFiltersValue>({});
 	const { result, isLoading } = useFetchExecutiveOverview(filters);
-	const { result: alertsResult } = useFetchAlerts(1);
+	const { result: alertsResult } = useFetchAlerts({ limit: 1 });
 
 	const filterOptions = result && result.ok ? result.data.filterOptions : EMPTY_FILTER_OPTIONS;
 
@@ -216,7 +216,7 @@ export default function ExecutiveOverviewClient() {
 
 			<div className="grid grid-cols-1 gap-2 xl:grid-cols-4">
 				<div className="xl:col-span-2">
-					<PipelineFunnel title="Resumo do Pipeline" data={pipeline.funnel} />
+					<PipelineFunnelSteps title="Resumo do Pipeline" data={pipeline.funnel} />
 				</div>
 				<PartyRankingTable
 					title="Principais Compradores (12 meses)"

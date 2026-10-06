@@ -13,8 +13,10 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const upstreamUrl = new URL(`${process.env.API_URL}/dashboard/alerts`);
-  const limit = searchParams.get("limit");
-  if (limit) upstreamUrl.searchParams.set("limit", limit);
+  for (const key of ["limit", "startDate", "endDate", "categoria", "criticidade", "parceiro"]) {
+    const value = searchParams.get(key);
+    if (value) upstreamUrl.searchParams.set(key, value);
+  }
 
   const res = await fetch(upstreamUrl, {
     headers: {

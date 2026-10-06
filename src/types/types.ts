@@ -383,15 +383,13 @@ export type PixPaymentParams = {
 
 export type PixPaymentResponse = {
 	paymentId: string;
-	orderId: string;
-	orderStatus: string;
+	asaas_payment_id: string;
 	payment: {
 		id: string;
 		status: string;
-		status_detail: string;
 		qr_code?: string;
 		qr_code_base64?: string;
-		ticket_url?: string;
+		expiration_date?: string;
 	};
 };
 
@@ -402,17 +400,14 @@ export type PaymentSyncResponse = {
 	payment?: {
 		id: string;
 		status: string;
-		mp_payment_id: string;
-		mp_status: string;
-		mp_status_detail: string;
+		asaas_payment_id: string;
 	};
-	mercadopago?: {
-		id: number;
+	asaas?: {
+		id: string;
 		status: string;
-		status_detail: string;
-		transaction_amount: number;
-		date_approved: string;
-		date_created: string;
+		value: number;
+		paymentDate?: string;
+		dueDate?: string;
 	};
 };
 
@@ -425,38 +420,53 @@ export type BoletoPaymentParams = {
 
 export type BoletoPaymentResponse = {
 	paymentId: string;
-	orderId: string;
-	orderStatus: string;
+	asaas_payment_id: string;
 	payment: {
 		id: string;
 		status: string;
-		status_detail: string;
-		ticket_url: string;
-		barcode_content: string;
-		digitable_line: string;
-		financial_institution: string;
+		invoice_url: string;
 		expiration_date: string;
+		/** Pendente: Asaas não retorna mais estes campos; aguardando endpoint extra de linha digitável */
+		barcode_content?: string;
+		digitable_line?: string;
 	};
 };
 
+// POST /payment/card (Asaas) — dados de cartão em claro; aguardando decisão
+// de tokenização client-side antes de habilitar o formulário no frontend.
 export type CardPaymentParams = {
 	saleId: string;
 	paymentMethodId: string;
 	amount: number;
-	token: string;
-	installments: number;
-	paymentMethodType: string;
-	cardPaymentMethodId: string;
+	phase?: 'down_payment' | 'final_payment' | 'full';
+	installmentCount?: number;
+	creditCard: {
+		holderName: string;
+		number: string;
+		expiryMonth: string;
+		expiryYear: string;
+		ccv: string;
+	};
+	creditCardHolderInfo: {
+		name: string;
+		email: string;
+		cpfCnpj: string;
+		postalCode: string;
+		addressNumber: string;
+		phone: string;
+	};
 };
 
 export type CardPaymentResponse = {
 	paymentId: string;
-	orderId: string;
-	orderStatus: string;
+	asaas_payment_id: string;
+	status: string;
+	phase?: string;
 	payment: {
 		id: string;
 		status: string;
-		status_detail: string;
+		brand?: string;
+		lastDigits?: string;
 	};
 };
 
@@ -553,8 +563,9 @@ export type PipelineFunnelBucket = {
 
 export type PipelineListRow = {
 	id: string;
-	orderNumber?: number;
+	orderNumber: number;
 	produto: string;
+	comprador: string;
 	vendedor: string;
 	valor: number;
 	status: string;
@@ -569,31 +580,108 @@ export type PipelineList = {
 	totalPages: number;
 };
 
+export type PipelineCounters = {
+	operacoesAtivas: number;
+	finalizadas: number;
+	aguardandoPagamento: number;
+	bloqueadas: number;
+	taxaConversaoPercent: number;
+	totalContratos: number;
+};
+
+export type PipelineGargalos = {
+	aguardandoPagamento: number;
+	bloqueadas: number;
+	semDocumentos: number;
+	entregaAtrasada: number;
+};
+
+export type PipelineStatusOption = {
+	value: string;
+	label: string;
+	stages?: number[];
+	blocked?: true;
+};
+
+export type PipelineFilterOptions = {
+	produtos: FilterOption[];
+	compradores: FilterOption[];
+	vendedores: FilterOption[];
+	tiposOperacao: FilterOption[];
+	status: PipelineStatusOption[];
+};
+
 export type PipelineResponse = {
 	statusCounts: PipelineStageCount[];
 	terminal: PipelineStageCount[];
 	funnel: PipelineFunnelBucket[];
+	counters: PipelineCounters;
+	gargalos: PipelineGargalos;
+	filterOptions: PipelineFilterOptions;
 	list: PipelineList;
 };
 
 // Dashboard Executivo — Alertas Operacionais (GET /dashboard/alerts)
+export type AlertsCounters = {
+	criticos: number;
+	medios: number;
+	resolvidos: number;
+	bloqueadas: number;
+	saudeOperacionalPercent: number | null;
+};
+
 export type AlertsCounts = {
 	semPagamentoAntesColheita: number;
-	semUploadDocumentos: number;
+	documentosPendentes: number;
 	entregaAtrasada: number;
-	pagamentoVencido: number;
+	bloqueadas: number;
+	semTermoAditivo: number;
 };
+
+export type AlertsCategoryBreakdown = {
+	categoria: string;
+	count: number;
+	percentual: number;
+};
+
+export type AlertsMonthlyTrend = {
+	month: string;
+	label: string;
+	criticos: number;
+	medios: number;
+	resolvidos: number;
+};
+
+export type AlertsFilterOptions = {
+	categorias: string[];
+	criticidades: string[];
+	parceiros: FilterOption[];
+};
+
+// Hoje o back só emite "Aberto" nos itens da lista (resolvidos só existe como
+// contador agregado, sem item individual) — modelado como união pra não travar
+// o tipo assim que o back passar a listar itens resolvidos também.
+export type AlertStatus = "Aberto" | "Resolvido";
 
 export type AlertItem = {
 	id: string;
-	orderNumber?: number;
-	problema: string;
-	responsavel: string;
+	orderNumber: number;
+	categoria: string;
+	criticidade: string;
+	parceiro: string;
+	descricao: string;
+	dataHora: string;
+	diasEmAberto: number;
 	acao: string;
+	status: AlertStatus;
 };
 
 export type AlertsResponse = {
+	counters: AlertsCounters;
 	counts: AlertsCounts;
+	porCategoria: AlertsCategoryBreakdown[];
+	evolucaoMensal: AlertsMonthlyTrend[];
+	filterOptions: AlertsFilterOptions;
 	list: {
 		items: AlertItem[];
 		total: number;
