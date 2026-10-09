@@ -4,6 +4,7 @@ import { verifySession } from "@/lib/session";
 import {
   AlertsResponse,
   ExecutiveOverviewResponse,
+  FinancialResponse,
   LogisticsResponse,
   PipelineResponse,
 } from "@/types/types";
@@ -155,6 +156,49 @@ export async function getLogistics(): Promise<LogisticsResult> {
 
   if (!res.ok) {
     console.error(`Erro ao buscar logística e desempenho: `, res.status);
+    return { ok: false, status: res.status };
+  }
+
+  const data = await res.json();
+  return { ok: true, data };
+}
+
+export type FinancialResult =
+  | { ok: true; data: FinancialResponse }
+  | { ok: false; status: number };
+
+export async function getFinancial(params?: {
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+  parceiro?: string;
+  produto?: string;
+  comprador?: string;
+  vendedor?: string;
+}): Promise<FinancialResult> {
+  const cookieStore = await cookies();
+  const session = cookieStore.get("session")?.value;
+  await verifySession(session);
+
+  const url = new URL(`${process.env.NEXT_PUBLIC_URL}/api/dashboard/financial`);
+  if (params?.limit != null) url.searchParams.set("limit", String(params.limit));
+  if (params?.startDate) url.searchParams.set("startDate", params.startDate);
+  if (params?.endDate) url.searchParams.set("endDate", params.endDate);
+  if (params?.parceiro) url.searchParams.set("parceiro", params.parceiro);
+  if (params?.produto) url.searchParams.set("produto", params.produto);
+  if (params?.comprador) url.searchParams.set("comprador", params.comprador);
+  if (params?.vendedor) url.searchParams.set("vendedor", params.vendedor);
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      Cookie: `session=${session}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    console.error(`Erro ao buscar controle financeiro: `, res.status);
     return { ok: false, status: res.status };
   }
 

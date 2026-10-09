@@ -14,17 +14,17 @@ const PRESET_DAYS: Record<DatePreset, number> = {
 	"30d": 30,
 };
 
+// Limites alinhados ao início/fim do dia: o resultado precisa ser estável entre
+// renders, pois é usado na queryKey (usar `new Date()` gerava refetch infinito).
 export function computePresetRange(preset: DatePreset): {
 	startDate: string;
 	endDate: string;
 } {
 	const endDate = new Date();
+	endDate.setHours(23, 59, 59, 999);
 	const startDate = new Date();
-	if (preset === "today") {
-		startDate.setHours(0, 0, 0, 0);
-	} else {
-		startDate.setDate(startDate.getDate() - PRESET_DAYS[preset]);
-	}
+	startDate.setHours(0, 0, 0, 0);
+	startDate.setDate(startDate.getDate() - PRESET_DAYS[preset]);
 	return { startDate: startDate.toISOString(), endDate: endDate.toISOString() };
 }
 

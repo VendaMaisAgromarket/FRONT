@@ -18,7 +18,7 @@ import {
 const COLOR_REALIZADO = "#3b9535"; // --primary
 const COLOR_PREVISTO = "#2f80ed"; // --info
 
-const SERIES_LABEL: Record<string, string> = {
+const DEFAULT_SERIES_LABEL: Record<string, string> = {
 	previsto: "Previsto",
 	realizado: "Realizado",
 };
@@ -28,6 +28,9 @@ type ForecastBarChartProps = {
 	data: MonthlyForecastActual[];
 	valueFormatter?: (value: number) => string;
 	variant?: "bar" | "area";
+	subtitle?: string;
+	/** Sobrescreve o texto da legenda/tooltip por série (ex: { realizado: "Recebido" }). */
+	seriesLabels?: Partial<Record<"previsto" | "realizado", string>>;
 };
 
 export default function ForecastBarChart({
@@ -35,12 +38,16 @@ export default function ForecastBarChart({
 	data,
 	valueFormatter,
 	variant = "bar",
+	subtitle,
+	seriesLabels,
 }: ForecastBarChartProps) {
+	const seriesLabel: Record<string, string> = { ...DEFAULT_SERIES_LABEL, ...seriesLabels };
 	const formatValue = valueFormatter ?? ((value: number) => value.toLocaleString("pt-BR"));
 
 	return (
 		<div className="rounded-xl border border-border bg-white p-4">
-			<h3 className="mb-4 text-sm font-semibold text-foreground">{title}</h3>
+			<h3 className={`${subtitle ? "mb-1" : "mb-4"} text-sm font-semibold text-foreground`}>{title}</h3>
+			{subtitle && <p className="mb-4 text-xs text-muted-foreground">{subtitle}</p>}
 			<ResponsiveContainer width="100%" height={260}>
 				{variant === "area" ? (
 					<AreaChart data={data} margin={{ top: 4, right: 8, left: 8, bottom: 0 }}>
@@ -59,13 +66,13 @@ export default function ForecastBarChart({
 							width={64}
 						/>
 						<Tooltip
-							formatter={(value) => formatValue(Number(value))}
+							formatter={(value, name) => [formatValue(Number(value)), seriesLabel[String(name)] ?? name]}
 							contentStyle={{ borderRadius: 8, borderColor: "#e1e0d9", fontSize: 12 }}
 						/>
 						<Legend
 							iconType="circle"
 							wrapperStyle={{ fontSize: 12, color: "#52514e" }}
-							formatter={(value: string) => SERIES_LABEL[value] ?? value}
+							formatter={(value: string) => seriesLabel[value] ?? value}
 						/>
 						<Area
 							type="monotone"
@@ -105,13 +112,13 @@ export default function ForecastBarChart({
 							width={64}
 						/>
 						<Tooltip
-							formatter={(value) => formatValue(Number(value))}
+							formatter={(value, name) => [formatValue(Number(value)), seriesLabel[String(name)] ?? name]}
 							contentStyle={{ borderRadius: 8, borderColor: "#e1e0d9", fontSize: 12 }}
 						/>
 						<Legend
 							iconType="circle"
 							wrapperStyle={{ fontSize: 12, color: "#52514e" }}
-							formatter={(value: string) => SERIES_LABEL[value] ?? value}
+							formatter={(value: string) => seriesLabel[value] ?? value}
 						/>
 						<Bar dataKey="previsto" name="previsto" fill={COLOR_PREVISTO} radius={[4, 4, 0, 0]} maxBarSize={24} />
 						<Bar dataKey="realizado" name="realizado" fill={COLOR_REALIZADO} radius={[4, 4, 0, 0]} maxBarSize={24} />

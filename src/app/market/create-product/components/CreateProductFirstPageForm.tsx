@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/tooltip';
 import { HelpCircle, CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { UseFormReturn } from 'react-hook-form';
 
 export function CreateProductFirstPageForm({
@@ -207,7 +207,7 @@ export function CreateProductFirstPageForm({
 									mode="single"
 									selected={field.value}
 									onSelect={field.onChange}
-									disabled={(date) => date < new Date()}
+									disabled={(date) => date < startOfDay(new Date())}
 									captionLayout="dropdown"
 								/>
 							</PopoverContent>

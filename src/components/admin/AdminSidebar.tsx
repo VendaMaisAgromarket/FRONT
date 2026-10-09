@@ -29,7 +29,7 @@ const navItems = [
 		title: "Controle Financeiro",
 		href: "/admin/financial",
 		icon: Wallet,
-		enabled: false,
+		enabled: true,
 	},
 	{
 		title: "Alertas Operacionais",
