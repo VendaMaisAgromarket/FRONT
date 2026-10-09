@@ -22,6 +22,7 @@ type EntityFiltersProps = {
 	options: ExecutiveOverviewFilterOptions;
 	value: EntityFiltersValue;
 	onChange: (value: EntityFiltersValue) => void;
+	showTipoOperacao?: boolean;
 };
 
 function FilterField({ label, children }: { label: string; children: ReactNode }) {
@@ -33,7 +34,12 @@ function FilterField({ label, children }: { label: string; children: ReactNode }
 	);
 }
 
-export default function EntityFilters({ options, value, onChange }: EntityFiltersProps) {
+export default function EntityFilters({
+	options,
+	value,
+	onChange,
+	showTipoOperacao = true,
+}: EntityFiltersProps) {
 	function set(key: keyof EntityFiltersValue, next: string) {
 		onChange({ ...value, [key]: next === ALL ? undefined : next });
 	}
@@ -89,16 +95,18 @@ export default function EntityFilters({ options, value, onChange }: EntityFilter
 			</FilterField>
 
 			{/* tipoOperacao: back aceita o filtro mas ainda não tem fonte de dado (filterOptions.tiposOperacao sempre []) */}
-			<FilterField label="Tipo de Operação">
-				<Select value={ALL} disabled>
-					<SelectTrigger size="sm" className="w-[8.5rem]">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value={ALL}>Todos</SelectItem>
-					</SelectContent>
-				</Select>
-			</FilterField>
+			{showTipoOperacao && (
+				<FilterField label="Tipo de Operação">
+					<Select value={ALL} disabled>
+						<SelectTrigger size="sm" className="w-[8.5rem]">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value={ALL}>Todos</SelectItem>
+						</SelectContent>
+					</Select>
+				</FilterField>
+			)}
 		</>
 	);
 }

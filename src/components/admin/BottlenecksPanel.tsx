@@ -1,4 +1,5 @@
 import { LucideIcon } from "lucide-react";
+import { ReactNode } from "react";
 
 export type BottleneckItem = {
 	key: string;
@@ -12,9 +13,10 @@ export type BottleneckItem = {
 type BottlenecksPanelProps = {
 	title?: string;
 	items: BottleneckItem[];
+	footer?: ReactNode;
 };
 
-export default function BottlenecksPanel({ title = "Gargalos da Operação", items }: BottlenecksPanelProps) {
+export default function BottlenecksPanel({ title = "Gargalos da Operação", items, footer }: BottlenecksPanelProps) {
 	return (
 		<div className="rounded-xl border border-border bg-white p-4">
 			<h3 className="mb-1 text-sm font-semibold text-foreground">{title}</h3>
@@ -41,6 +43,7 @@ export default function BottlenecksPanel({ title = "Gargalos da Operação", ite
 					);
 				})}
 			</ul>
+			{footer}
 		</div>
 	);
 }

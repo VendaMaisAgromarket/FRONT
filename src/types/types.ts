@@ -706,3 +706,91 @@ export type LogisticsResponse = {
 	byBuyer: LogisticsPerformanceRow[];
 	bySeller: LogisticsPerformanceRow[];
 };
+
+// Dashboard Executivo — Controle Financeiro (GET /dashboard/financial)
+export type FinancialSituacao = "Inadimplente" | "Aguardando Pagamento" | "Parcial";
+
+export type FinancialCounters = {
+	saldoVinculado: number;
+	valorLiberado: number;
+	valorPendente: number;
+	inadimplencia: number;
+	operacoesBloqueadas: number;
+	// Sempre null hoje (depende de migration no back) — tipado como number | null pra
+	// o front só passar a exibir quando vier preenchido.
+	variacaoMesAnterior: number | null;
+};
+
+export type FinancialResourceSliceKey = "liberado" | "vinculado" | "pendente" | "inadimplente";
+
+export type FinancialResourceSlice = {
+	key: FinancialResourceSliceKey;
+	label: string;
+	valor: number;
+	percentual: number;
+};
+
+export type FinancialCriticalOperation = {
+	id: string;
+	orderNumber: number;
+	comprador: string;
+	valor: number;
+	situacao: FinancialSituacao;
+	// null = cobrança ainda não gerada; aproximado (data da cobrança + regras.diasParaVencimento)
+	vencimento: string | null;
+};
+
+export type FinancialPartnerPerformance = {
+	id: string | null;
+	nome: string;
+	operacoes: number;
+	faturamento: number;
+	recebido: number;
+	percentualRecebido: number;
+};
+
+export type FinancialPaymentSummary = {
+	valorTotal: number;
+	recebido: number;
+	aReceber: number;
+	percentualRecebido: number;
+	porFase: { entrada: number; saldo: number; integral: number };
+};
+
+export type FinancialFilterOptions = {
+	produtos: FilterOption[];
+	compradores: FilterOption[];
+	vendedores: FilterOption[];
+	parceiros: FilterOption[];
+	tiposOperacao: FilterOption[];
+};
+
+export type FinancialResponse = {
+	generatedAt: string;
+	regras: {
+		taxaPlataformaPercent: number;
+		diasParaVencimento: number;
+	};
+	counters: FinancialCounters;
+	situacaoRecursos: {
+		totalGerenciado: number;
+		slices: FinancialResourceSlice[];
+	};
+	taxaPlataforma: number;
+	operacoesCriticas: {
+		items: FinancialCriticalOperation[];
+		total: number;
+		limit: number;
+	};
+	gargalos: {
+		aguardandoPagamento: number;
+		semTermoAditivo: number;
+		bloqueadas: number;
+		pagamentoVencido: number;
+	};
+	evolucao: MonthlyForecastActual[];
+	performancePorParceiro: FinancialPartnerPerformance[];
+	resumoPagamento: FinancialPaymentSummary;
+	embarque: { aptas: number; aguardandoPagamento: number; bloqueadas: number };
+	filterOptions: FinancialFilterOptions;
+};
