@@ -7,8 +7,9 @@ export const DATE_PRESET_OPTIONS: { key: DatePreset; label: string }[] = [
 	{ key: "30d", label: "30 dias" },
 ];
 
+// Quantidade de dias do calendário cobertos, incluindo hoje
 const PRESET_DAYS: Record<DatePreset, number> = {
-	today: 0,
+	today: 1,
 	"7d": 7,
 	"15d": 15,
 	"30d": 30,
@@ -16,6 +17,7 @@ const PRESET_DAYS: Record<DatePreset, number> = {
 
 // Limites alinhados ao início/fim do dia: o resultado precisa ser estável entre
 // renders, pois é usado na queryKey (usar `new Date()` gerava refetch infinito).
+// Como os limites são inclusivos, "7d" vai de 00:00 de 6 dias atrás até 23:59 de hoje.
 export function computePresetRange(preset: DatePreset): {
 	startDate: string;
 	endDate: string;
@@ -24,7 +26,7 @@ export function computePresetRange(preset: DatePreset): {
 	endDate.setHours(23, 59, 59, 999);
 	const startDate = new Date();
 	startDate.setHours(0, 0, 0, 0);
-	startDate.setDate(startDate.getDate() - PRESET_DAYS[preset]);
+	startDate.setDate(startDate.getDate() - (PRESET_DAYS[preset] - 1));
 	return { startDate: startDate.toISOString(), endDate: endDate.toISOString() };
 }
 
