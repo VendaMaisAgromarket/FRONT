@@ -86,15 +86,6 @@ export default function CreateProductSecondPageForm({
 
 	return (
 		<>
-			<Button
-				type="button"
-				className="w-full"
-				onClick={() => append({ unitId: '', minPrice: '', acronym: '' })}
-			>
-				<CirclePlus />
-				Adicionar nova unidade
-			</Button>
-
 			{sellingUnitFields.length ? (
 				<ul className="space-y-4">
 					{sellingUnitFields.map((field, index) => {
@@ -240,6 +231,15 @@ export default function CreateProductSecondPageForm({
 					)}
 				</>
 			)}
+
+			<Button
+				type="button"
+				className="w-full"
+				onClick={() => append({ unitId: '', minPrice: '', acronym: '' })}
+			>
+				<CirclePlus />
+				Adicionar nova unidade
+			</Button>
 		</>
 	);
 }

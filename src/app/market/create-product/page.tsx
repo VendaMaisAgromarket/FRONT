@@ -2,6 +2,7 @@
 
 import { getAddresses } from '@/actions/address';
 import { readProductById } from '@/actions/product';
+import { getAllSellingUnits } from '@/actions/sellingUnit';
 import { createProductSchema, CreateProductSchemaType } from '@/lib/schemas';
 import { newProductFormSteps } from '@/utils/data';
 import { moneyMask } from '@/utils/functions';
@@ -30,11 +31,28 @@ export default function CadastrarProduto() {
 			sellingUnits: [],
 			images: [],
 			isNegotiable: false,
+			harvestAt: new Date(),
 		},
 	});
 	useEffect(() => {
 		getAddresses().then((addresses) => setHasNoAddress(addresses.length === 0));
 	}, []);
+
+	// Novo cadastro já inicia com uma unidade de venda em quilogramas
+	useEffect(() => {
+		if (productId) return;
+
+		getAllSellingUnits().then(
+			(units: { id: string; unit: string; title: string }[]) => {
+				const kg = units.find((u) => u.unit.toLowerCase() === 'kg');
+				if (!kg || form.getValues('sellingUnits').length) return;
+
+				form.setValue('sellingUnits', [
+					{ unitId: kg.id, minPrice: '', acronym: kg.unit },
+				]);
+			}
+		);
+	}, [productId, form]);
 
 	useEffect(() => {
 		async function fetchAndSetProductData() {

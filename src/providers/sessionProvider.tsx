@@ -1,6 +1,5 @@
 import { getUserCartData } from "@/actions/cart";
 import StoreInitializer from "@/components/userStoreInitializer";
-import { deleteSession } from "@/lib/session";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
@@ -21,8 +20,7 @@ export default async function SessionProvider({
 			headers: { Cookie: `session=${sessionCookie}` },
 		});
 		if (!userRes.ok) {
-			await deleteSession();
-			redirect("/login");
+			redirect("/api/auth/expired");
 		}
 		user = await userRes.json();
 		const res = await getUserCartData();
