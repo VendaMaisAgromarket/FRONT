@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-	_req: NextRequest,
+	req: NextRequest,
 	{ params }: { params: Promise<{ id: string }> }
 ) {
 	const session = (await cookies()).get("session")?.value;
@@ -16,7 +16,9 @@ export async function GET(
 
 	try {
 		const cleanId = id.trim();
-		const url = `${process.env.API_URL}/products/${cleanId}`;
+		// Repassa filtros suportados pelo back (ex.: ?status=all)
+		const query = req.nextUrl.searchParams.toString();
+		const url = `${process.env.API_URL}/products/${cleanId}${query ? `?${query}` : ""}`;
 		
 		const res = await fetch(url, {
 			method: "GET",

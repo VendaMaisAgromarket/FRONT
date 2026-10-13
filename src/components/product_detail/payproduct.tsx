@@ -17,7 +17,7 @@ import { useCheckoutStore } from '@/store/useCheckoutStore';
 import { useUserStore } from '@/store/userInfoStore';
 import { UnitData } from '@/types/types';
 import { harvestAtStyles } from '@/utils/data';
-import { formatDate } from '@/utils/functions';
+import { brasiliaDateKey, formatDate } from '@/utils/functions';
 import {
 	CreditCard,
 	HandCoins,
@@ -147,18 +147,17 @@ const CompraProduto = ({
 	}
 
 	function harvestStatus(): ProductHarvestStatus {
-		const today = new Date();
-		const oneWeekFromNow = new Date(today);
-		oneWeekFromNow.setDate(today.getDate() + 7);
-		const fifteenDaysFromNow = new Date(today);
-		fifteenDaysFromNow.setDate(today.getDate() + 15);
-		const harvestDate = new Date(harvestAt);
+		// Dias de calendário até a colheita, no fuso de Brasília
+		const daysUntilHarvest =
+			(Date.parse(brasiliaDateKey(new Date(harvestAt))) -
+				Date.parse(brasiliaDateKey(new Date()))) /
+			86_400_000;
 
-		if (harvestDate <= today) {
+		if (daysUntilHarvest <= 0) {
 			return 'C';
-		} else if (harvestDate <= oneWeekFromNow) {
+		} else if (daysUntilHarvest <= 7) {
 			return 'W';
-		} else if (harvestDate <= fifteenDaysFromNow) {
+		} else if (daysUntilHarvest <= 15) {
 			return 'Q';
 		} else {
 			return 'N';
