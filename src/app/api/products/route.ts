@@ -1,13 +1,15 @@
 import { verifySession } from "@/lib/session";
 import { Product } from "@/types/types";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = (await cookies()).get("session")?.value;
   const token = await verifySession(session);
+  // Repassa filtros suportados pelo back (ex.: ?category=)
+  const query = req.nextUrl.searchParams.toString();
 
-  const res = await fetch(`${process.env.API_URL}/products`, {
+  const res = await fetch(`${process.env.API_URL}/products${query ? `?${query}` : ""}`, {
     headers: {
       Authorization: `Bearer ${token.jwt}`,
     },

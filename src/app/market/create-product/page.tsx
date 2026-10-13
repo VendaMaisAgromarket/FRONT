@@ -58,7 +58,7 @@ export default function CadastrarProduto() {
 		async function fetchAndSetProductData() {
 			if (productId) {
 				try {
-					const data = await readProductById(productId);
+					const data = await readProductById(productId, true);
 
 					const newDefaultValues = {
 						name: data.name,

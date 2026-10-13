@@ -3,6 +3,7 @@
 import { removeProductAction } from '@/actions/product';
 import { Button } from '@/components/ui/button';
 import { SellerProductList } from '@/types/types';
+import { isHarvestAvailable } from '@/utils/functions';
 import { PackagePlus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -72,6 +73,8 @@ export default function ProductListClient({
 							harvestAt: p.harvestAt,
 							isNegotiable: p.isNegotiable,
 							variety: p.variety,
+							// Desativado pelo vendedor ou com a colheita já encerrada
+							isActive: p.status && isHarvestAvailable(p.harvestAt),
 						}}
 						handleRemoveProduct={handleRemoveProductClient.bind(null, p.id)}
 					/>

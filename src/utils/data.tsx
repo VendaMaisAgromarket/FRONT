@@ -119,7 +119,7 @@ export const headerSections = [
 		icon: (
 			<HeartPlus className="text-primary w-[32px] h-[32px] md:w-[96px] md:h-[96px]" />
 		),
-		href: "/market#",
+		href: "/market/best-sellers",
 	},
 	{
 		title: "Categorias",
@@ -128,7 +128,7 @@ export const headerSections = [
 		icon: (
 			<ArrowDownAZ className="text-primary w-[32px] h-[32px] md:w-[96px] md:h-[96px]" />
 		),
-		href: "/market#",
+		href: "/market#categorias",
 	},
 ];
 

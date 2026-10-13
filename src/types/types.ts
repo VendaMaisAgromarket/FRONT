@@ -152,6 +152,7 @@ export type SellerProductList = {
 	harvestAt: string;
 	isNegotiable: boolean;
 	createdAt: string;
+	status: boolean;
 	sellingUnitProduct: SellingUnitProduct[];
 };
 

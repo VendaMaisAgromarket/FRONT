@@ -9,7 +9,7 @@ interface PageProps {
 
 export default async function EditProductPage({ params }: PageProps) {
 	const { id } = await params;
-	const product = await readProductById(id);
+	const product = await readProductById(id, true);
 
 	if (!product) {
 		return (

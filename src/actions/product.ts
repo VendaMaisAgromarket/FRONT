@@ -41,12 +41,14 @@ export async function createProduct(values: CreateProductSchemaType) {
 	}
 }
 
-export async function readProductById(id: string) {
+// includeInactive: telas do vendedor (editar/duplicar) precisam ver produtos desativados
+export async function readProductById(id: string, includeInactive = false) {
 	const cookieStore = await cookies();
 	const session = cookieStore.get("session")?.value;
 	await verifySession(session);
 
-	const res = await fetch(`${apiUrl}/api/sellerProducts/${id}`, {
+	const query = includeInactive ? "?status=all" : "";
+	const res = await fetch(`${apiUrl}/api/sellerProducts/${id}${query}`, {
 		method: "GET",
 		headers: {
 			Cookie: `session=${session}`,
@@ -135,12 +137,13 @@ export async function removeProductAction(id: string): Promise<{ success: boolea
 	}
 }
 
-export async function getAll() {
+// Produtos visíveis no market: exclui os do próprio usuário e os com colheita vencida
+async function fetchMarketProducts(query = "") {
 	const cookieStorage = await cookies();
 	const token = cookieStorage.get("session")?.value;
 	const { id } = await verifySession(token);
 
-	const res = await fetch(`${apiUrl}/api/products`, {
+	const res = await fetch(`${apiUrl}/api/products${query}`, {
 		method: "GET",
 		headers: {
 			Cookie: `session=${token}`,
@@ -154,14 +157,47 @@ export async function getAll() {
 	return data.filter((p: any) => p.sellerId !== id && isHarvestAvailable(p.harvestAt));
 }
 
+export async function getAll() {
+	return fetchMarketProducts();
+}
+
+export async function getByCategory(category: string) {
+	const products = await fetchMarketProducts(
+		`?category=${encodeURIComponent(category)}`
+	);
+	return products;
+}
+
+// O back já conta só vendas efetivadas e aplica os filtros de vitrine
+// (sem produtos do próprio usuário e sem colheita vencida).
+export async function getBestSellers(limit = 20) {
+	const cookieStorage = await cookies();
+	const token = cookieStorage.get("session")?.value;
+	const { jwt } = await verifySession(token);
+
+	const res = await fetch(`${api}/products/best-sellers?limit=${limit}`, {
+		method: "GET",
+		headers: {
+			Authorization: `Bearer ${jwt}`,
+		},
+	});
+
+	if (!res.ok) {
+		return [];
+	}
+	return await res.json();
+}
+
 export async function getAllFromSeller(id?: string) {
 	const cookieStore = await cookies();
 	const token = cookieStore.get("session")?.value;
 
 	const { id: userId, jwt } = await verifySession(token);
 	const searchId = id === undefined ? userId : id;
+	// O próprio vendedor vê também os produtos desativados; no perfil público, só os ativos
+	const query = id === undefined ? "?status=all" : "";
 
-	const res = await fetch(`${process.env.API_URL}/products/user/${searchId}`, {
+	const res = await fetch(`${process.env.API_URL}/products/user/${searchId}${query}`, {
 		method: "GET",
 		headers: {
 			Authorization: `Bearer ${jwt}`,
@@ -172,7 +208,7 @@ export async function getAllFromSeller(id?: string) {
 	return await res.json();
 }
 
-export async function getProductDetails(productId: string) {
+export async function getProductDetails(productId: string, includeInactive = false) {
 	const cookieStore = await cookies();
 	const session = cookieStore.get("session")?.value;
 
@@ -181,7 +217,8 @@ export async function getProductDetails(productId: string) {
 		return null;
 	}
 
-	const res = await fetch(`${apiUrl}/api/sellerProducts/${productId}`, {
+	const query = includeInactive ? "?status=all" : "";
+	const res = await fetch(`${apiUrl}/api/sellerProducts/${productId}${query}`, {
 		method: "GET",
 		headers: { Cookie: `session=${session}` },
 	});
@@ -221,7 +258,13 @@ export async function updateProduct(
 
 		if (!res.ok) {
 			console.error("Erro ao atualizar produto:", res);
-			return { success: false, message: "Erro ao editar produto." };
+			const body = await res.json().catch(() => null);
+			// Mensagens de regra de negócio do back (400/403/404) já vêm em português
+			const message =
+				[400, 403, 404].includes(res.status) && body?.error
+					? body.error
+					: "Erro ao editar produto.";
+			return { success: false, message };
 		}
 
 		return { success: true };

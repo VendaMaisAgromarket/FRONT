@@ -1,4 +1,3 @@
-import { isBefore, startOfDay } from "date-fns";
 
 export function moneyMask(value: number): string {
 	const n = Number(value);
@@ -83,12 +82,26 @@ export function formatDate(date: string) {
 		day: "2-digit",
 		month: "2-digit",
 		year: "2-digit",
+		timeZone: "America/Sao_Paulo",
 	});
 	return formattedDate;
 }
 
+// Data de calendário (YYYY-MM-DD) no fuso de Brasília, independente do fuso
+// de quem executa (servidor em UTC ou navegador).
+export function brasiliaDateKey(date: Date): string {
+	return new Intl.DateTimeFormat("en-CA", {
+		timeZone: "America/Sao_Paulo",
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	}).format(date);
+}
+
+// Disponível até 23:59:59 do dia da colheita, no fuso de Brasília
+// (mesma regra que o back usa para desativar o produto).
 export function isHarvestAvailable(harvestAt: string | Date): boolean {
-	return isBefore(startOfDay(new Date()), startOfDay(new Date(harvestAt)));
+	return brasiliaDateKey(new Date()) <= brasiliaDateKey(new Date(harvestAt));
 }
 
 export function removeMoneyMask(value: string): number {
