@@ -148,7 +148,7 @@ export default function EditProductForm({ productId }: { productId: string }) {
 		async function fetchData() {
 			setLoading(true);
 			try {
-				const data = await getProductDetails(productId);
+				const data = await getProductDetails(productId, true);
 
 				if (!data) throw new Error();
 

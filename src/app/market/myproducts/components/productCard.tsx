@@ -31,6 +31,7 @@ type ProductCardProps = {
 		isNegotiable: boolean;
 		variety: string;
 		images: string[];
+		isActive: boolean;
 	};
 	handleRemoveProduct: () => void;
 };
@@ -60,6 +61,12 @@ export default function ProductCard({
 						Negociável
 					</Badge>
 				)}
+
+				{!data.isActive && (
+					<Badge variant="destructive" className="absolute top-2 left-2">
+						Inativo
+					</Badge>
+				)}
 			</div>
 			<div className="p-4">
 				<h3 className="text-xl font-semibold">{data.name}</h3>
@@ -68,6 +75,11 @@ export default function ProductCard({
 				<p className="text-sm text-gray-600">
 					Estimativa de colheita: {formatDate(data.harvestAt)}
 				</p>
+				{!data.isActive && (
+					<p className="text-sm text-red-700">
+						Fora da vitrine. Atualize a data de colheita para reativar.
+					</p>
+				)}
 				<p className="text-sm text-gray-600">
 					Anunciado em: {formatDate(data.createdAt)}
 				</p>

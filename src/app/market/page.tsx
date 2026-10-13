@@ -47,7 +47,10 @@ export default async function Home() {
 				<h3 className="text-xl mb-4 font-semibold">Recomendados</h3>
 				<ProductsCarousel products={products} />
 			</section>
-			<section className="bg-white my-12 max-w-max-screen w-10/12 m-auto p-4 rounded-xl shadow-md">
+			<section
+				id="categorias"
+				className="bg-white my-12 max-w-max-screen w-10/12 m-auto p-4 rounded-xl shadow-md scroll-mt-24"
+			>
 				<div className="flex items-baseline gap-2">
 					<h3 className="text-xl mb-4 font-semibold">Categorias</h3>
 				</div>
@@ -58,7 +61,10 @@ export default async function Home() {
 								key={_}
 								className="border border-gray-5 p-2 rounded-xl h-24 hover:text-blue-500"
 							>
-								<Link href="#" className="flex items-center gap-2 h-full">
+								<Link
+									href={`/market/category/${encodeURIComponent(c.value)}`}
+									className="flex items-center gap-2 h-full"
+								>
 									<Image
 										src={c.imageSrc}
 										alt={`Imagem de um ${c.imageAlt}`}
