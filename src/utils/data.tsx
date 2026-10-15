@@ -1,4 +1,5 @@
 import {
+	Bell,
 	Apple,
 	ArrowDownAZ,
 	BadgePercent,
@@ -31,6 +32,12 @@ export const sectionsListData = [
 				icon: <ShoppingBag size={20} />,
 				title: "Meus Pedidos",
 				href: "/market/history",
+				type: "default",
+			},
+			{
+				icon: <Bell size={20} />,
+				title: "Notificações",
+				href: "/market/notificacoes",
 				type: "default",
 			},
 			// {
