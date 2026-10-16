@@ -58,6 +58,14 @@ export async function verifySession(sessionToken: string | undefined) {
   };
 }
 
+// Para rotas de API: devolve null em vez de redirecionar, para a rota responder 401.
+// (Um redirect para /login seria seguido pelo fetch do navegador e entregaria HTML.)
+export async function getApiSessionJwt(): Promise<string | null> {
+  const session = await decrypt((await cookies()).get(cookie.name)?.value);
+  if (!session?.id || typeof session.jwt !== "string") return null;
+  return session.jwt;
+}
+
 export async function deleteSession() {
   (await cookies()).delete(cookie.name);
 }

@@ -36,7 +36,7 @@ import {
     ExternalLink,
     Receipt,
 } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { isValidUUID } from '@/lib/validation'
 import Image from 'next/image'
@@ -80,7 +80,7 @@ function FirstItem({ name, quantityLabel }: { name: string; quantityLabel: strin
     )
 }
 
-export default React.memo(function OrderCard({ order, saleData }: { order: OrderView; saleData?: SaleData }) {
+export default React.memo(function OrderCard({ order, saleData, autoOpenDetails = false }: { order: OrderView; saleData?: SaleData; autoOpenDetails?: boolean }) {
     const first = order.items?.[0]
     const router = useRouter()
 
@@ -91,6 +91,10 @@ export default React.memo(function OrderCard({ order, saleData }: { order: Order
 
     // Sheet de detalhe
     const [detailOpen, setDetailOpen] = useState(false)
+
+    useEffect(() => {
+        if (autoOpenDetails) setDetailOpen(true)
+    }, [autoOpenDetails])
 
     // Contrato
     const [contractOpen, setContractOpen] = useState(false)

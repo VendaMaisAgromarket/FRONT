@@ -1,6 +1,7 @@
 'use client'
-import { notFound } from 'next/navigation'
-import React, { useEffect, useMemo, useState } from 'react'
+import { notFound, usePathname, useRouter } from 'next/navigation'
+import React, { use, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -15,7 +16,10 @@ function resolveProductName(bp: SaleBoughtProduct): string {
   return n ? String(n) : `Produto #${bp.productId ?? ''}`.trim()
 }
 
-export default function OrderHistoryPage() {
+export default function OrderHistoryPage({ searchParams }: { searchParams: Promise<{ saleId?: string }> }) {
+  const { saleId: focusSaleId } = use(searchParams)
+  const router = useRouter()
+  const pathname = usePathname()
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'price-high' | 'price-low'>('recent')
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'delivered' | 'rejected'>('all')
@@ -23,12 +27,14 @@ export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<(OrderView & { createdAtISO: string })[]>([])
   const [rawSales, setRawSales] = useState<SaleData[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
       ; (async () => {
         try {
           setLoading(true)
+          setLoadError(false)
           const res = await fetch('/api/sale?mine=1', { cache: 'no-store', credentials: 'include', signal: controller.signal })
           if (res.status === 404) return notFound()
           if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -111,7 +117,10 @@ export default function OrderHistoryPage() {
           setRawSales(sales)
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e: unknown) {
-          if (!controller.signal.aborted) setOrders([])
+          if (!controller.signal.aborted) {
+            setOrders([])
+            setLoadError(true)
+          }
         } finally {
           if (!controller.signal.aborted) setLoading(false)
         }
@@ -119,6 +128,18 @@ export default function OrderHistoryPage() {
 
     return () => controller.abort()
   }, [])
+
+  // Deep link vindo de uma notificação (?saleId=): o OrderCard abre o detalhe;
+  // aqui só avisamos se a compra não existe mais e limpamos a URL. Só depois de um
+  // carregamento bem-sucedido: numa falha a lista vem vazia e o saleId é mantido.
+  useEffect(() => {
+    if (!focusSaleId || loading || loadError) return
+    if (!orders.some((o) => o.id === focusSaleId)) {
+      toast.warning('Este pedido não está mais disponível.')
+    }
+    router.replace(pathname, { scroll: false })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusSaleId, loading, loadError])
 
   const filteredOrders = useMemo(() => {
     const term = searchTerm.toLowerCase()
@@ -264,7 +285,7 @@ export default function OrderHistoryPage() {
           </div>
 
           <div className="md:max-w-6xl md:mx-auto md:px-4 space-y-3 md:space-y-4 pb-6">
-            {filteredOrders.map((order) => <OrderCard key={order.id} order={order} saleData={rawSales.find((s) => s.id === order.id)} />)}
+            {filteredOrders.map((order) => <OrderCard key={order.id} order={order} saleData={rawSales.find((s) => s.id === order.id)} autoOpenDetails={order.id === focusSaleId} />)}
           </div>
 
           {filteredOrders.length === 0 && (

@@ -795,3 +795,47 @@ export type FinancialResponse = {
 	embarque: { aptas: number; aguardandoPagamento: number; bloqueadas: number };
 	filterOptions: FinancialFilterOptions;
 };
+
+// Notificações in-app
+export type NotificationType =
+	| "NEW_ORDER"
+	| "ORDER_ACCEPTED"
+	| "ORDER_REJECTED"
+	| "DOWN_PAYMENT_RECEIVED"
+	| "WEIGHT_REGISTERED"
+	| "FINAL_PAYMENT_RECEIVED"
+	| "ORDER_STATUS_CHANGED"
+	| "PRODUCT_HARVEST_REMINDER";
+
+export type NotificationData = {
+	role?: "buyer" | "seller";
+	orderNumber?: number;
+	status?: string;
+	phase?: string;
+	amount?: number;
+	weightKg?: number;
+	adjustedContractTotal?: number | null;
+	productId?: string | number;
+	harvestAt?: string;
+	daysLeft?: number;
+	[key: string]: unknown;
+};
+
+export type AppNotification = {
+	id: string;
+	// string aberto: um tipo novo no back não pode quebrar o front
+	type: NotificationType | (string & {});
+	title: string;
+	message: string;
+	saleId: string | null;
+	productId: string | number | null;
+	data: NotificationData | null;
+	readAt: string | null;
+	createdAt: string;
+};
+
+export type NotificationsPage = {
+	items: AppNotification[];
+	nextCursor: string | null;
+	unreadCount: number;
+};

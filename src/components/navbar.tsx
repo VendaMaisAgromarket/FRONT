@@ -2,6 +2,7 @@
 
 import logo from "@/assets/logo.png";
 import AdminModeSwitch from "@/components/admin/AdminModeSwitch";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import Sidemenu from "@/components/sidemenu";
 import { Button } from "@/components/ui/button";
 import {
@@ -167,11 +168,8 @@ export default function Navbar({ searchedItem = "" }: NavbarProps) {
 						)}
 					</ul>
 				</form>
-				<div className="md:hidden block">
-					<ShoppingCartComponent amount={amount} />
-				</div>
-				<div className="hidden md:block">
-					<div className="flex gap-4 items-center">
+				<div className="flex gap-4 items-center shrink-0">
+					<div className="hidden md:flex gap-4 items-center">
 						{user?.role === "admin" && <AdminModeSwitch />}
 						<div className="relative flex items-center gap-2">
 							{user && (
@@ -271,8 +269,10 @@ export default function Navbar({ searchedItem = "" }: NavbarProps) {
 								</DropdownMenu>
 							)}
 						</div>
-						<ShoppingCartComponent amount={amount} />
 					</div>
+					{/* Renderizado uma única vez (mobile + desktop) para não duplicar o polling */}
+					{user && <NotificationBell />}
+					<ShoppingCartComponent amount={amount} />
 				</div>
 			</div>
 		</nav>
