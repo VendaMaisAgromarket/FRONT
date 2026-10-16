@@ -8,7 +8,7 @@ import { listNotifications, markAllAsRead } from "@/services/notifications";
 import { useNotificationsStore } from "@/store/notificationsStore";
 import { AppNotification } from "@/types/types";
 import { BellOff, LoaderCircle } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const PAGE_SIZE = 20;
@@ -24,43 +24,45 @@ export default function NotificationsPage() {
 	const [error, setError] = useState(false);
 	const [markingAll, setMarkingAll] = useState(false);
 	const { unreadCount, setUnreadCount } = useNotificationsStore();
+	// Incrementado a cada troca de filtro (e ao desmontar). Respostas de requisições
+	// iniciadas com outro filtro são descartadas para não misturar as listas.
+	const generationRef = useRef(0);
 
 	const handleClick = useNotificationClick((id, readAt) => {
 		setItems((prev) => prev.map((n) => (n.id === id ? { ...n, readAt } : n)));
 	});
 
-	const loadFirstPage = useCallback(
-		async (signal?: { aborted: boolean }) => {
-			try {
-				setLoading(true);
-				setError(false);
-				const page = await listNotifications({
-					limit: PAGE_SIZE,
-					unreadOnly: filter === "unread",
-				});
-				if (signal?.aborted) return;
-				setItems(page.items);
-				setNextCursor(page.nextCursor);
-				setUnreadCount(page.unreadCount);
-			} catch {
-				if (!signal?.aborted) setError(true);
-			} finally {
-				if (!signal?.aborted) setLoading(false);
-			}
-		},
-		[filter, setUnreadCount]
-	);
+	const loadFirstPage = useCallback(async () => {
+		const generation = ++generationRef.current;
+		try {
+			setLoading(true);
+			setLoadingMore(false);
+			setError(false);
+			const page = await listNotifications({
+				limit: PAGE_SIZE,
+				unreadOnly: filter === "unread",
+			});
+			if (generation !== generationRef.current) return;
+			setItems(page.items);
+			setNextCursor(page.nextCursor);
+			setUnreadCount(page.unreadCount);
+		} catch {
+			if (generation === generationRef.current) setError(true);
+		} finally {
+			if (generation === generationRef.current) setLoading(false);
+		}
+	}, [filter, setUnreadCount]);
 
 	useEffect(() => {
-		const signal = { aborted: false };
-		loadFirstPage(signal);
+		loadFirstPage();
 		return () => {
-			signal.aborted = true;
+			generationRef.current++;
 		};
 	}, [loadFirstPage]);
 
 	async function loadMore() {
-		if (!nextCursor) return;
+		if (!nextCursor || loadingMore) return;
+		const generation = generationRef.current;
 		try {
 			setLoadingMore(true);
 			const page = await listNotifications({
@@ -68,17 +70,21 @@ export default function NotificationsPage() {
 				cursor: nextCursor,
 				unreadOnly: filter === "unread",
 			});
+			if (generation !== generationRef.current) return;
 			setItems((prev) => [...prev, ...page.items]);
 			setNextCursor(page.nextCursor);
 			setUnreadCount(page.unreadCount);
 		} catch {
-			toast.error("Não foi possível carregar mais notificações.");
+			if (generation === generationRef.current) {
+				toast.error("Não foi possível carregar mais notificações.");
+			}
 		} finally {
-			setLoadingMore(false);
+			if (generation === generationRef.current) setLoadingMore(false);
 		}
 	}
 
 	async function handleMarkAll() {
+		const generation = generationRef.current;
 		const previousItems = items;
 		const previousCount = unreadCount;
 		const now = new Date().toISOString();
@@ -88,7 +94,8 @@ export default function NotificationsPage() {
 			setMarkingAll(true);
 			await markAllAsRead();
 		} catch {
-			setItems(previousItems);
+			// Só restaura a lista se ela ainda for do mesmo filtro
+			if (generation === generationRef.current) setItems(previousItems);
 			setUnreadCount(previousCount);
 			toast.error("Não foi possível marcar as notificações como lidas.");
 		} finally {

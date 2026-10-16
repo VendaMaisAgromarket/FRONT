@@ -1,5 +1,5 @@
 import { getNotificationHref } from "@/components/notifications/notificationUtils";
-import { markAsRead } from "@/services/notifications";
+import { markAsRead, NotificationsUnauthorizedError } from "@/services/notifications";
 import { useNotificationsStore } from "@/store/notificationsStore";
 import { AppNotification } from "@/types/types";
 import { useRouter } from "next/navigation";
@@ -12,13 +12,16 @@ export default function useNotificationClick(
 ) {
 	const router = useRouter();
 	const decrementUnread = useNotificationsStore((s) => s.decrementUnread);
+	const stopPolling = useNotificationsStore((s) => s.stopPolling);
 
 	return function handleClick(n: AppNotification) {
 		if (n.readAt === null) {
 			onMarkedRead(n.id, new Date().toISOString());
 			decrementUnread();
-			markAsRead(n.id).catch(() => {
-				// 404 = notificação já não existe; o próximo polling corrige o contador
+			markAsRead(n.id).catch((e) => {
+				// 401 = sessão expirada: para o polling. Outros erros (ex.: 404, notificação
+				// já não existe) são corrigidos pelo próximo ciclo do contador.
+				if (e instanceof NotificationsUnauthorizedError) stopPolling();
 			});
 		}
 

@@ -1,25 +1,22 @@
-import { verifySession } from "@/lib/session";
-import { cookies } from "next/headers";
+import { getApiSessionJwt } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
 	_req: NextRequest,
 	{ params }: { params: Promise<{ id: string }> }
 ) {
-	const session = (await cookies()).get("session")?.value;
+	const jwt = await getApiSessionJwt();
 
-	if (!session) {
-		return NextResponse.json({ error: "Sessão não encontrada" }, { status: 401 });
+	if (!jwt) {
+		return NextResponse.json({ error: "Sessão expirada" }, { status: 401 });
 	}
-
-	const token = await verifySession(session);
 	const { id } = await params;
 
 	const res = await fetch(
 		`${process.env.API_URL}/notifications/${encodeURIComponent(id)}/read`,
 		{
 			method: "PATCH",
-			headers: { Authorization: `Bearer ${token.jwt}` },
+			headers: { Authorization: `Bearer ${jwt}` },
 		}
 	);
 

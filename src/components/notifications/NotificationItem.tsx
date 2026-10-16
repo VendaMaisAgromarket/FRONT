@@ -51,10 +51,13 @@ export default function NotificationItem({
 						{n.title}
 					</p>
 					{unread && (
-						<span
-							className="mt-1.5 size-2 shrink-0 rounded-full bg-primary"
-							aria-label="Não lida"
-						/>
+						<>
+							<span
+								className="mt-1.5 size-2 shrink-0 rounded-full bg-primary"
+								aria-hidden="true"
+							/>
+							<span className="sr-only">Não lida</span>
+						</>
 					)}
 				</div>
 				<p className={cn("text-sm text-gray-600", compact && "line-clamp-2")}>

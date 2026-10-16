@@ -27,12 +27,14 @@ export default function OrderHistoryPage({ searchParams }: { searchParams: Promi
   const [orders, setOrders] = useState<(OrderView & { createdAtISO: string })[]>([])
   const [rawSales, setRawSales] = useState<SaleData[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
       ; (async () => {
         try {
           setLoading(true)
+          setLoadError(false)
           const res = await fetch('/api/sale?mine=1', { cache: 'no-store', credentials: 'include', signal: controller.signal })
           if (res.status === 404) return notFound()
           if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -115,7 +117,10 @@ export default function OrderHistoryPage({ searchParams }: { searchParams: Promi
           setRawSales(sales)
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e: unknown) {
-          if (!controller.signal.aborted) setOrders([])
+          if (!controller.signal.aborted) {
+            setOrders([])
+            setLoadError(true)
+          }
         } finally {
           if (!controller.signal.aborted) setLoading(false)
         }
@@ -125,15 +130,16 @@ export default function OrderHistoryPage({ searchParams }: { searchParams: Promi
   }, [])
 
   // Deep link vindo de uma notificação (?saleId=): o OrderCard abre o detalhe;
-  // aqui só avisamos se a compra não existe mais e limpamos a URL.
+  // aqui só avisamos se a compra não existe mais e limpamos a URL. Só depois de um
+  // carregamento bem-sucedido: numa falha a lista vem vazia e o saleId é mantido.
   useEffect(() => {
-    if (!focusSaleId || loading) return
+    if (!focusSaleId || loading || loadError) return
     if (!orders.some((o) => o.id === focusSaleId)) {
       toast.warning('Este pedido não está mais disponível.')
     }
     router.replace(pathname, { scroll: false })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusSaleId, loading])
+  }, [focusSaleId, loading, loadError])
 
   const filteredOrders = useMemo(() => {
     const term = searchTerm.toLowerCase()
