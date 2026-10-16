@@ -275,6 +275,12 @@ export default function OrdersClient({ focusSaleId }: { focusSaleId?: string }) 
 						setUpdateError(
 							"Faltam menos de 24h para a operação. Para reagendar, entre em contato com o suporte. Sujeito à multa de 10% conforme Cláusula 7."
 						);
+					} else if (errData.code === "SALE_STATUS_CONFLICT") {
+						// Outra ação mudou o pedido entre a leitura e a gravação
+						setUpdateError(
+							"O pedido foi atualizado por outra ação. Os dados foram recarregados; confira o status atual e tente novamente."
+						);
+						loadSalesData(false);
 					} else if (errData.code === "RESCHEDULE_EXCEEDS_MAX_DAYS") {
 						setUpdateError(
 							"A nova data excede o limite de 3 dias úteis da data original contratada (Cláusula 9)."

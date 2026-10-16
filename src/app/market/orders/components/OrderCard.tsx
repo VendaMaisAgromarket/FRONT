@@ -181,7 +181,17 @@ export function OrderCard({
         body: fd,
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { error?: string };
+        const data = await res.json().catch(() => ({})) as { error?: string; code?: string };
+        // Corrida com outra ação no pedido: o back desfaz a pesagem; recarregamos
+        // os dados para o vendedor ver o estado atual antes de tentar de novo.
+        if (data.code === "SALE_STATUS_CONFLICT") {
+          onWeightRegistered?.();
+          throw new Error("O status do pedido mudou enquanto a pesagem era registrada. Os dados foram atualizados; confira o pedido antes de tentar novamente.");
+        }
+        if (data.code === "WEIGHT_ALREADY_REGISTERED") {
+          onWeightRegistered?.();
+          throw new Error("A pesagem deste pedido já foi registrada.");
+        }
         throw new Error(data.error ?? "Erro ao registrar pesagem");
       }
       const data = await res.json() as { fileUrl?: string };
