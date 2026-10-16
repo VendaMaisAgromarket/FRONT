@@ -47,6 +47,9 @@ import {
 	Search,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useNotificationsStore } from "@/store/notificationsStore";
 import { useEffect, useMemo, useState } from "react";
 import { OrderCard } from "./OrderCard";
 import { OrdersPageSkeleton } from "./OrdersPageSkeleton";
@@ -150,7 +153,10 @@ function transformSaleDataToOrder(sale: SaleData): Order {
 	};
 }
 
-export default function OrdersClient() {
+export default function OrdersClient({ focusSaleId }: { focusSaleId?: string }) {
+	const router = useRouter();
+	const pathname = usePathname();
+	const refreshUnreadCount = useNotificationsStore((s) => s.refreshUnreadCount);
 	const [query, setQuery] = useState("");
 	const [orders, setOrders] = useState<Order[]>([]);
 	const [rawSales, setRawSales] = useState<SaleData[]>([]);
@@ -205,6 +211,18 @@ export default function OrdersClient() {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
+	// Deep link vindo de uma notificação (?saleId=): o OrderCard abre o detalhe;
+	// aqui só avisamos se a venda não existe mais e limpamos a URL, para que um
+	// novo clique na mesma notificação volte a abrir o detalhe.
+	useEffect(() => {
+		if (!focusSaleId || loading || error) return;
+		if (!orders.some((o) => o.id === focusSaleId)) {
+			toast.warning("Este pedido não está mais disponível.");
+		}
+		router.replace(pathname, { scroll: false });
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [focusSaleId, loading, error]);
+
 	const filtered = useMemo(() => {
 		const q = query.trim();
 		if (!q) return orders;
@@ -257,6 +275,12 @@ export default function OrdersClient() {
 						setUpdateError(
 							"Faltam menos de 24h para a operação. Para reagendar, entre em contato com o suporte. Sujeito à multa de 10% conforme Cláusula 7."
 						);
+					} else if (errData.code === "SALE_STATUS_CONFLICT") {
+						// Outra ação mudou o pedido entre a leitura e a gravação
+						setUpdateError(
+							"O pedido foi atualizado por outra ação. Os dados foram recarregados; confira o status atual e tente novamente."
+						);
+						loadSalesData(false);
 					} else if (errData.code === "RESCHEDULE_EXCEEDS_MAX_DAYS") {
 						setUpdateError(
 							"A nova data excede o limite de 3 dias úteis da data original contratada (Cláusula 9)."
@@ -276,6 +300,7 @@ export default function OrdersClient() {
 				)
 			);
 			setDialogOpen(false);
+			refreshUnreadCount();
 		} catch (error) {
 			console.error("Erro ao atualizar:", error);
 			setUpdateError("Erro ao atualizar. Tente novamente.");
@@ -481,6 +506,7 @@ export default function OrdersClient() {
 						onAccept={() => handleAcceptOrder(order.id)}
 						onReject={() => handleRejectOrder(order.id)}
 						onWeightRegistered={() => loadSalesData(false)}
+						autoOpenDetails={order.id === focusSaleId}
 					/>
 				))}
 			</div>

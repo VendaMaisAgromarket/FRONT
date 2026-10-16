@@ -27,7 +27,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNotificationsStore } from "@/store/notificationsStore";
 import SaleDetailClient from "@/components/sale/SaleDetailClient";
 import ContractTemplate from "@/components/sale/ContractTemplate";
 import { getContractView } from "@/actions/contract";
@@ -56,6 +57,7 @@ export function OrderCard({
   onAccept,
   onReject,
   onWeightRegistered,
+  autoOpenDetails = false,
 }: {
   order: Order;
   saleData?: SaleData;
@@ -64,8 +66,14 @@ export function OrderCard({
   onAccept: () => void;
   onReject: () => void;
   onWeightRegistered?: () => void;
+  autoOpenDetails?: boolean;
 }) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const refreshUnreadCount = useNotificationsStore((s) => s.refreshUnreadCount);
+
+  useEffect(() => {
+    if (autoOpenDetails) setSheetOpen(true);
+  }, [autoOpenDetails]);
 
   const [contractOpen, setContractOpen] = useState(false);
   const [contractData, setContractData] = useState<Record<string, unknown> | null>(null);
@@ -143,6 +151,7 @@ export function OrderCard({
         throw new Error(data.error ?? "Erro ao autorizar colheita");
       }
       setHarvestAuthorized(true);
+      refreshUnreadCount();
     } catch (e: unknown) {
       setHarvestError(e instanceof Error ? e.message : "Erro ao autorizar colheita");
     } finally {
@@ -172,7 +181,17 @@ export function OrderCard({
         body: fd,
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { error?: string };
+        const data = await res.json().catch(() => ({})) as { error?: string; code?: string };
+        // Corrida com outra ação no pedido: o back desfaz a pesagem; recarregamos
+        // os dados para o vendedor ver o estado atual antes de tentar de novo.
+        if (data.code === "SALE_STATUS_CONFLICT") {
+          onWeightRegistered?.();
+          throw new Error("O status do pedido mudou enquanto a pesagem era registrada. Os dados foram atualizados; confira o pedido antes de tentar novamente.");
+        }
+        if (data.code === "WEIGHT_ALREADY_REGISTERED") {
+          onWeightRegistered?.();
+          throw new Error("A pesagem deste pedido já foi registrada.");
+        }
         throw new Error(data.error ?? "Erro ao registrar pesagem");
       }
       const data = await res.json() as { fileUrl?: string };

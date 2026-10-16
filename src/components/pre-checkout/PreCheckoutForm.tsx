@@ -5,7 +5,7 @@ import { Form, FormField } from '@/components/ui/form';
 import { preCheckoutSchema } from '@/lib/schemas';
 import { useCheckoutStore } from '@/store/useCheckoutStore';
 import { checkoutSteps } from '@/utils/data';
-import { Dispatch, SetStateAction, useState } from 'react';
+import { Dispatch, SetStateAction, useRef, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import * as z from 'zod';
 import AddressStep from './AddressStep';
@@ -18,6 +18,13 @@ import { acceptContract } from '@/actions/contract';
 import { toast } from 'sonner';
 import TanstackProvider from '@/providers/tanstackProvider';
 import { useRouter } from 'next/navigation';
+import FinishOrderButton from './FinishOrderButton';
+import {
+	clearOrderCooldown,
+	formatCooldown,
+	getOrderCooldownRemainingMs,
+	startOrderCooldown,
+} from '@/utils/orderSubmitCooldown';
 
 export type PreCheckoutFormType = z.infer<typeof preCheckoutSchema>;
 
@@ -36,6 +43,10 @@ export default function PreCheckoutForm({
 	const sellers = getSellers();
 	const router = useRouter();
 	const [addressError, setAddressError] = useState(false);
+	// Trava síncrona contra duplo clique: o state só reflete no próximo render
+	const submittingRef = useRef(false);
+	const [submitting, setSubmitting] = useState(false);
+	const isLastStep = step === checkoutSteps.length - 1;
 
 	async function onSubmit(values: PreCheckoutFormType) {
 		const products = getProducts();
@@ -53,7 +64,25 @@ export default function PreCheckoutForm({
 			})),
 		};
 
-		const res = await createNewOrder(payload);
+		// A espera começa no envio, não no sucesso: com a rota lenta o pedido pode ser
+		// criado mesmo que a resposta não chegue.
+		startOrderCooldown();
+
+		let res: Awaited<ReturnType<typeof createNewOrder>>;
+		try {
+			res = await createNewOrder(payload);
+		} catch {
+			toast.error(
+				'Não foi possível confirmar o pedido. Confira em "Meus pedidos" antes de tentar novamente.'
+			);
+			return;
+		}
+
+		// 4xx = o back recusou o pedido (nada foi criado): libera para corrigir e reenviar.
+		// Em 5xx/timeout a espera é mantida, pois o pedido pode ter sido gravado.
+		if (!res.success && res.status >= 400 && res.status < 500) {
+			clearOrderCooldown();
+		}
 
 		if (res.success) {
 			// Persist the accepted contract snapshot to the backend
@@ -87,10 +116,34 @@ export default function PreCheckoutForm({
 		});
 		if (!valid) return;
 
-		if (step < checkoutSteps.length - 1) {
+		if (!isLastStep) {
 			setStep(step + 1);
-		} else {
-			handleSubmit(onSubmit)();
+		}
+	}
+
+	async function finishOrder() {
+		if (submittingRef.current) return;
+
+		const remaining = getOrderCooldownRemainingMs();
+		if (remaining > 0) {
+			toast.info(
+				`Seu pedido já foi enviado. Confira em "Meus pedidos" ou aguarde ${formatCooldown(remaining)} para tentar novamente.`
+			);
+			return;
+		}
+
+		submittingRef.current = true;
+		setSubmitting(true);
+		try {
+			const fields = checkoutSteps[step]?.fields ?? [];
+			const valid = await trigger(fields as (keyof PreCheckoutFormType)[], {
+				shouldFocus: true,
+			});
+			if (!valid) return;
+			await handleSubmit(onSubmit)();
+		} finally {
+			submittingRef.current = false;
+			setSubmitting(false);
 		}
 	}
 
@@ -99,7 +152,8 @@ export default function PreCheckoutForm({
 			<form
 				onSubmit={(e) => {
 					e.preventDefault();
-					showNextForm();
+					if (isLastStep) finishOrder();
+					else showNextForm();
 				}}
 				className="space-y-6"
 			>
@@ -153,20 +207,24 @@ export default function PreCheckoutForm({
 						type="button"
 						variant="outline"
 						onClick={() => setStep((s) => Math.max(0, s - 1))}
-						disabled={step === 0}
+						disabled={step === 0 || submitting}
 						className="px-6"
 					>
 						Voltar
 					</Button>
 
-					<Button
-						type="button"
-						className="px-6 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
-						onClick={showNextForm}
-						disabled={step === 3 && addressError}
-					>
-						{step === checkoutSteps.length ? 'Finalizar Compra' : 'Continuar'}
-					</Button>
+					{isLastStep ? (
+						<FinishOrderButton submitting={submitting} onClick={finishOrder} />
+					) : (
+						<Button
+							type="button"
+							className="px-6 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+							onClick={showNextForm}
+							disabled={step === 3 && addressError}
+						>
+							Continuar
+						</Button>
+					)}
 				</div>
 			</form>
 		</Form>

@@ -36,6 +36,7 @@ export async function createNewOrder(payload: CreateNewProductPayload) {
 		return {
 			success: true,
 			message: res.statusText,
+			status: res.status,
 			orderId: responseData.data?.id,
 		};
 	}
@@ -43,6 +44,7 @@ export async function createNewOrder(payload: CreateNewProductPayload) {
 	return {
 		success: false,
 		message: res.statusText,
+		status: res.status,
 		code: responseData.code as string | undefined,
 	};
 }

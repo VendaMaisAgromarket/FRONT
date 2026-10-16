@@ -48,7 +48,7 @@ export async function POST(
 
         if (!res.ok) {
             return NextResponse.json(
-                { error: data.message || data.error || "Erro ao registrar pesagem" },
+                { error: data.message || data.error || "Erro ao registrar pesagem", code: data.code },
                 { status: res.status }
             );
         }
