@@ -42,7 +42,7 @@ const config: SettingsCrudConfig<SellingUnit> = {
 			: null;
 	},
 	toPayload: (v) => ({ title: v.title.trim(), unit: v.unit.trim() }),
-	inUseDescription: "Existem produtos cadastrados com esta unidade, por isso ela não pode ser excluída.",
+	inUseDescription: "existem produtos cadastrados com esta unidade.",
 };
 
 export default function SellingUnitsSettingsClient() {

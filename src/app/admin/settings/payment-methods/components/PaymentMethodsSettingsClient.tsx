@@ -9,6 +9,15 @@ type PaymentMethod = {
 	method: string;
 };
 
+// O checkout decide disponibilidade e fluxo pelo nome do método (isWip/getDescription em
+// mapPaymentMethodToData e a página de pagamento), e cada um compara de um jeito
+// (primeira palavra, nome exato, substring). Só estes nomes são reconhecidos igual por todos.
+const CANONICAL_METHODS = ["Pix", "Boleto", "Cartão"];
+
+function toCanonical(method: string): string {
+	return CANONICAL_METHODS.find((m) => m.toLowerCase() === method.trim().toLowerCase()) ?? "";
+}
+
 const config: SettingsCrudConfig<PaymentMethod> = {
 	resource: "payment-methods",
 	title: "Métodos de pagamento",
@@ -19,28 +28,35 @@ const config: SettingsCrudConfig<PaymentMethod> = {
 	fields: [
 		{
 			name: "method",
-			label: "Nome do método",
+			label: "Método",
+			type: "select",
 			required: true,
-			placeholder: "Ex.: Pix",
-			// O fluxo de pagamento identifica o tipo pelo nome (pix/boleto/cartão).
-			helper: "O checkout identifica o tipo pelo nome: mantenha \"Pix\", \"Boleto\" ou \"Cartão\" no texto.",
+			placeholder: "Selecione o método",
+			options: CANONICAL_METHODS.map((m) => ({ value: m, label: m })),
+			helper: "Somente os métodos suportados pelo checkout podem ser cadastrados.",
 		},
 	],
 	getId: (m) => m.id,
 	getLabel: (m) => m.method,
 	searchText: (m) => m.method,
 	sortBy: (a, b) => a.method.localeCompare(b.method, "pt-BR"),
-	toForm: (m) => ({ method: m?.method ?? "" }),
+	// Nome legado fora do padrão abre vazio: o admin precisa escolher um método suportado.
+	toForm: (m) => ({ method: m ? toCanonical(m.method) : "" }),
 	validate: (v, _mode, { items, editing }) => {
-		const name = v.method.trim().toLowerCase();
+		if (!CANONICAL_METHODS.includes(v.method)) {
+			return {
+				title: "Método não suportado",
+				description: `Escolha um destes: ${CANONICAL_METHODS.join(", ")}.`,
+			};
+		}
+		const name = v.method.toLowerCase();
 		const duplicate = items.find((m) => m.id !== editing?.id && m.method.trim().toLowerCase() === name);
 		return duplicate
 			? { title: "Método já cadastrado", description: `Já existe o método "${duplicate.method}".` }
 			: null;
 	},
-	toPayload: (v) => ({ method: v.method.trim() }),
-	inUseDescription:
-		"Este método já foi usado em vendas ou pagamentos e não pode ser excluído. Você pode renomeá-lo.",
+	toPayload: (v) => ({ method: v.method }),
+	inUseDescription: "este método já foi usado em vendas ou pagamentos.",
 };
 
 export default function PaymentMethodsSettingsClient() {

@@ -51,7 +51,7 @@ const config: SettingsCrudConfig<TransportType> = {
 		type: v.type.trim(),
 		valueFreight: Number(v.valueFreight.replace(",", ".")),
 	}),
-	inUseDescription: "Este tipo de transporte já foi usado em vendas e não pode ser excluído. Você pode editá-lo.",
+	inUseDescription: "este tipo de transporte já foi usado em vendas.",
 };
 
 export default function TransportTypesSettingsClient() {

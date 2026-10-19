@@ -172,8 +172,11 @@ const config: SettingsCrudConfig<AdminUser> = {
 			email: v.email.trim(),
 			phone_number: cleanNumericString(v.phone_number),
 		};
-		// Campos vazios são omitidos: o back gravaria "" e quebraria a unicidade de CPF/CNPJ/CCIR.
-		if (v.ccir.trim()) payload.ccir = v.ccir.trim();
+		// "" quebraria a unicidade de CCIR no banco: no cadastro o campo vazio é omitido;
+		// na edição vai null explícito, para que apagar o campo realmente limpe o valor.
+		const ccir = v.ccir.trim();
+		if (ccir) payload.ccir = ccir;
+		else if (mode === "edit") payload.ccir = null;
 		if (v.password) payload.password = v.password;
 		// Perfil, CPF e CNPJ são bloqueados na edição — só vão no cadastro.
 		if (mode === "create") {
@@ -188,7 +191,7 @@ const config: SettingsCrudConfig<AdminUser> = {
 	// Impede o admin de excluir a própria conta por engano.
 	canDelete: (u, currentUserId) => u.id !== currentUserId,
 	inUseDescription:
-		"Este usuário possui endereços, produtos, pedidos ou contratos vinculados e não pode ser excluído.",
+		"o usuário tem endereços, produtos, pedidos ou contratos vinculados.",
 };
 
 export default function UsersSettingsClient() {

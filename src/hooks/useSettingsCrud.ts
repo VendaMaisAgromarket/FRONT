@@ -11,7 +11,15 @@ export default function useSettingsCrud<T>(resource: SettingsResource) {
 	const queryClient = useQueryClient();
 	const queryKey = ["settings", resource];
 
-	const { data: result, isLoading } = useQuery({
+	// isError cobre o caso em que a server action rejeita (ex.: falha de rede):
+	// aí `result` fica undefined e não pode ser confundido com lista vazia.
+	const {
+		data: result,
+		isLoading,
+		isError,
+		isFetching,
+		refetch,
+	} = useQuery({
 		queryKey,
 		queryFn: () => listSettings<T>(resource),
 	});
@@ -34,5 +42,14 @@ export default function useSettingsCrud<T>(resource: SettingsResource) {
 		onSuccess: invalidate,
 	});
 
-	return { result, isLoading, createMutation, updateMutation, deleteMutation };
+	return {
+		result,
+		isLoading,
+		isError,
+		isFetching,
+		refetch,
+		createMutation,
+		updateMutation,
+		deleteMutation,
+	};
 }

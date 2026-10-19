@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/table";
 import useSettingsCrud from "@/hooks/useSettingsCrud";
 import { AlertCircle, Lock, Pencil, Plus, Search, Trash2 } from "lucide-react";
-import { ReactNode, useMemo, useState } from "react";
+import { ReactNode, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export type FormValues = Record<string, string>;
@@ -97,7 +97,7 @@ export type SettingsCrudConfig<T> = {
 		ctx: ValidationContext<T>
 	) => SettingsError | null;
 	canDelete?: (item: T, currentUserId: string) => boolean;
-	/** Explica por que a exclusão foi recusada pelo banco (registro vinculado a outros dados). */
+	/** Possível vínculo que impede a exclusão — citado como causa provável quando o back responde 500. */
 	inUseDescription: string;
 	sortBy?: (a: T, b: T) => number;
 };
@@ -132,13 +132,32 @@ const CONNECTION_ERROR: SettingsError = {
 	description: "Não foi possível falar com o servidor. Verifique sua internet e tente novamente.",
 };
 
+// Falhas transitórias (limite de requisições / servidor fora do ar): vale tentar de novo.
+function transientError(status: number): SettingsError | null {
+	if (status === 429) {
+		return {
+			title: "Muitas requisições",
+			description: "O servidor recebeu muitas requisições em pouco tempo. Aguarde alguns segundos e tente novamente.",
+		};
+	}
+	if (status === 502 || status === 503 || status === 504) {
+		return {
+			title: "Servidor indisponível",
+			description: `O servidor está temporariamente fora do ar (código ${status}). Tente novamente em instantes.`,
+		};
+	}
+	return null;
+}
+
 function listError(status: number): SettingsError {
 	if (status === 401) return SESSION_EXPIRED;
 	if (status === 403) return FORBIDDEN;
-	return {
-		title: "Erro ao carregar a lista",
-		description: `O servidor não respondeu corretamente (código ${status}). Tente novamente mais tarde.`,
-	};
+	return (
+		transientError(status) ?? {
+			title: "Erro ao carregar a lista",
+			description: `O servidor não respondeu corretamente (código ${status}). Tente novamente mais tarde.`,
+		}
+	);
 }
 
 function mutationError(
@@ -163,9 +182,15 @@ function mutationError(
 			description: result.error ?? "Revise os campos preenchidos e tente novamente.",
 		};
 	}
-	// O back responde 500 genérico quando o banco recusa a exclusão por chave estrangeira.
+	const transient = transientError(result.status);
+	if (transient) return transient;
+	// 500 na exclusão: o back não diferencia vínculo (chave estrangeira) de outras falhas,
+	// então o vínculo é citado só como causa provável, junto com a orientação de tentar de novo.
 	if (action === "excluir") {
-		return { title: "Registro em uso", description: inUseDescription };
+		return {
+			title: "Não foi possível excluir",
+			description: `Causa provável: ${inUseDescription} Se não for o caso, tente novamente em instantes (código ${result.status}).`,
+		};
 	}
 	return {
 		title: "Erro no servidor",
@@ -174,8 +199,16 @@ function mutationError(
 }
 
 export default function SettingsCrudPage<T>({ config }: { config: SettingsCrudConfig<T> }) {
-	const { result, isLoading, createMutation, updateMutation, deleteMutation } =
-		useSettingsCrud<T>(config.resource);
+	const {
+		result,
+		isLoading,
+		isError,
+		isFetching,
+		refetch,
+		createMutation,
+		updateMutation,
+		deleteMutation,
+	} = useSettingsCrud<T>(config.resource);
 
 	const [search, setSearch] = useState("");
 	const [mode, setMode] = useState<FormMode | null>(null);
@@ -183,6 +216,9 @@ export default function SettingsCrudPage<T>({ config }: { config: SettingsCrudCo
 	const [values, setValues] = useState<FormValues>({});
 	const [formError, setFormError] = useState<SettingsError | null>(null);
 	const [confirmDelete, setConfirmDelete] = useState(false);
+	// Identifica a instância do formulário aberta: respostas de uma requisição só
+	// são aplicadas se o formulário que a disparou ainda for o atual.
+	const formInstance = useRef(0);
 
 	const items = useMemo(() => {
 		if (!result?.ok) return [];
@@ -195,9 +231,11 @@ export default function SettingsCrudPage<T>({ config }: { config: SettingsCrudCo
 
 	const currentUserId = result?.ok ? result.currentUserId : "";
 	const isSaving = createMutation.isPending || updateMutation.isPending;
+	const isBusy = isSaving || deleteMutation.isPending;
 	const visibleFields = config.fields.filter((f) => !f.only || f.only === mode);
 
 	function openCreate() {
+		formInstance.current += 1;
 		setEditing(null);
 		setValues(config.toForm(null));
 		setFormError(null);
@@ -205,6 +243,7 @@ export default function SettingsCrudPage<T>({ config }: { config: SettingsCrudCo
 	}
 
 	function openEdit(item: T) {
+		formInstance.current += 1;
 		setEditing(item);
 		setValues(config.toForm(item));
 		setFormError(null);
@@ -212,6 +251,7 @@ export default function SettingsCrudPage<T>({ config }: { config: SettingsCrudCo
 	}
 
 	function closeForm() {
+		formInstance.current += 1;
 		setMode(null);
 		setEditing(null);
 		setConfirmDelete(false);
@@ -249,6 +289,7 @@ export default function SettingsCrudPage<T>({ config }: { config: SettingsCrudCo
 		}
 
 		const body = config.toPayload(values, mode);
+		const instance = formInstance.current;
 		let res: SettingsMutationResult;
 		try {
 			res =
@@ -256,10 +297,14 @@ export default function SettingsCrudPage<T>({ config }: { config: SettingsCrudCo
 					? await createMutation.mutateAsync(body)
 					: await updateMutation.mutateAsync({ id: config.getId(editing as T), body });
 		} catch {
+			res = { ok: false, status: 0 };
+		}
+		if (instance !== formInstance.current) return;
+
+		if (!res.ok && res.status === 0) {
 			setFormError(CONNECTION_ERROR);
 			return;
 		}
-
 		if (!res.ok) {
 			setFormError(mutationError(res, "salvar", config.inUseDescription));
 			return;
@@ -273,12 +318,14 @@ export default function SettingsCrudPage<T>({ config }: { config: SettingsCrudCo
 
 	async function handleDelete() {
 		if (!editing) return;
+		const instance = formInstance.current;
 		let res: SettingsMutationResult;
 		try {
 			res = await deleteMutation.mutateAsync(config.getId(editing));
 		} catch {
 			res = { ok: false, status: 0 };
 		}
+		if (instance !== formInstance.current) return;
 		setConfirmDelete(false);
 		if (!res.ok) {
 			setFormError(
@@ -395,14 +442,19 @@ export default function SettingsCrudPage<T>({ config }: { config: SettingsCrudCo
 							<Skeleton key={i} className="h-10 w-full" />
 						))}
 					</div>
-				) : result && !result.ok ? (
-					<div className="py-10 text-center">
-						<p className="text-sm font-semibold text-destructive">
-							{listError(result.status).title}
-						</p>
-						<p className="text-sm text-muted-foreground">
-							{listError(result.status).description}
-						</p>
+				) : isError || !result || !result.ok ? (
+					<div className="flex flex-col items-center gap-3 py-10 text-center">
+						<div>
+							<p className="text-sm font-semibold text-destructive">
+								{(result && !result.ok ? listError(result.status) : CONNECTION_ERROR).title}
+							</p>
+							<p className="text-sm text-muted-foreground">
+								{(result && !result.ok ? listError(result.status) : CONNECTION_ERROR).description}
+							</p>
+						</div>
+						<Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+							{isFetching ? "Tentando..." : "Tentar novamente"}
+						</Button>
 					</div>
 				) : items.length === 0 ? (
 					<p className="py-10 text-center text-sm text-muted-foreground">
@@ -445,7 +497,8 @@ export default function SettingsCrudPage<T>({ config }: { config: SettingsCrudCo
 				)}
 			</div>
 
-			<Dialog open={mode !== null} onOpenChange={(open) => !open && closeForm()}>
+			{/* Enquanto salva/exclui, o modal não pode ser fechado pelo usuário (Esc, clique fora, Cancelar). */}
+			<Dialog open={mode !== null} onOpenChange={(open) => !open && !isBusy && closeForm()}>
 				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
 					<form onSubmit={handleSubmit} className="space-y-4">
 						<DialogHeader>
@@ -494,10 +547,10 @@ export default function SettingsCrudPage<T>({ config }: { config: SettingsCrudCo
 								<span />
 							)}
 							<div className="flex gap-2">
-								<Button type="button" variant="outline" onClick={closeForm}>
+								<Button type="button" variant="outline" onClick={closeForm} disabled={isBusy}>
 									Cancelar
 								</Button>
-								<Button type="submit" disabled={isSaving}>
+								<Button type="submit" disabled={isBusy}>
 									{isSaving ? "Salvando..." : "Salvar"}
 								</Button>
 							</div>
@@ -506,7 +559,10 @@ export default function SettingsCrudPage<T>({ config }: { config: SettingsCrudCo
 				</DialogContent>
 			</Dialog>
 
-			<AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+			<AlertDialog
+				open={confirmDelete}
+				onOpenChange={(open) => !deleteMutation.isPending && setConfirmDelete(open)}
+			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Excluir {config.singular.toLowerCase()}?</AlertDialogTitle>
