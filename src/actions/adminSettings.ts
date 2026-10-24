@@ -1,6 +1,6 @@
 "use server";
 
-import { verifySession } from "@/lib/session";
+import { deleteSession, verifySession } from "@/lib/session";
 import { cookies } from "next/headers";
 
 const RESOURCE_PATHS = {
@@ -17,7 +17,8 @@ export type SettingsListResult<T> =
   | { ok: false; status: number };
 
 export type SettingsMutationResult =
-  | { ok: true }
+  // sessionEnded: o admin trocou a própria senha e a sessão foi encerrada.
+  | { ok: true; sessionEnded?: boolean }
   | { ok: false; status: number; error?: string };
 
 // Checa o cookie antes de chamar verifySession — ele faz redirect() quando a
@@ -114,6 +115,13 @@ export async function updateSetting(
 
   if (!res.ok) {
     return { ok: false, status: res.status, error: await readError(res) };
+  }
+
+  // Trocar a própria senha invalida todos os JWTs do usuário no back, inclusive o desta
+  // sessão: encerra aqui; o cliente leva ao login sem novas chamadas com o token antigo.
+  if (resource === "users" && String(id) === String(session.id) && body.password) {
+    await deleteSession();
+    return { ok: true, sessionEnded: true };
   }
   return { ok: true };
 }

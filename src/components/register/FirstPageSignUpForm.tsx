@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import {
 	FormControl,
+	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -18,6 +19,7 @@ import {
 	SelectItem,
 } from '@/components/ui/select';
 import PasswordInput from '../passwordInput';
+import PasswordRequirements from '../PasswordRequirements';
 import { Input } from '../ui/input';
 import DocumentsDialog from './DocumentsDialog';
 import {
@@ -25,34 +27,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Check, HelpCircle } from 'lucide-react';
-
-function PasswordRequirements({ password }: { password: string }) {
-	const items = [
-		{ label: 'Senha com no mínimo 8 caracteres', met: password.length >= 8 },
-		{ label: 'Ao menos uma letra maiúscula (A-Z)', met: /[A-Z]/.test(password) },
-		{ label: 'Ao menos uma letra minúscula (a-z)', met: /[a-z]/.test(password) },
-		{ label: 'Números (0-9)', met: /[0-9]/.test(password) },
-		{ label: 'Caracteres especiais ($, %, @, …)', met: /[^A-Za-z0-9]/.test(password) },
-	];
-
-	return (
-		<ul className="mt-2 space-y-1 text-xs">
-			{items.map((item) => (
-				<li
-					key={item.label}
-					className={`flex items-center gap-1.5 transition-colors ${item.met ? 'text-green-600' : 'text-gray-900'}`}
-				>
-					{item.met
-						? <Check className="h-3 w-3 shrink-0" />
-						: <span className="h-3 w-3 shrink-0 flex items-center justify-center text-[10px]">•</span>
-					}
-					{item.label}
-				</li>
-			))}
-		</ul>
-	);
-}
+import { HelpCircle } from 'lucide-react';
 
 export function FirstPageSignUpForm({
 	form,
@@ -310,6 +285,9 @@ export function FirstPageSignUpForm({
 								className="w-full border border-border rounded h-12 px-4 py-3"
 							/>
 						</FormControl>
+						<FormDescription className="text-xs">
+							Usaremos este e-mail para avisos sobre seus pedidos e para recuperação de senha.
+						</FormDescription>
 
 						<FormMessage />
 					</FormItem>
