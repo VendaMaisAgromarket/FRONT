@@ -1,3 +1,4 @@
+import { PASSWORD_REGEX } from '@/lib/validation';
 import { removeMoneyMask } from '@/utils/functions';
 import z from 'zod';
 
@@ -142,6 +143,50 @@ export const signInSchema = z.object({
 		),
 	password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres.'),
 });
+
+export const forgotPasswordSchema = z.object({
+	email: z
+		.string()
+		.trim()
+		.min(1, 'Informe o e-mail.')
+		.email('Informe um e-mail válido.'),
+});
+
+// Mesma regra do back (cadastro, link de redefinição e troca pelo perfil).
+const newPasswordField = z
+	.string()
+	.regex(
+		PASSWORD_REGEX,
+		'A senha deve conter pelo menos 8 caracteres, incluindo uma letra maiúscula, uma letra minúscula, um número e um caractere especial.'
+	)
+	// Espaço conta como "caractere especial" na regex do back; espaço sobrando ao colar
+	// a senha seria salvo e depois não bateria no login.
+	.refine((v) => v === v.trim(), 'A senha não pode começar nem terminar com espaço.');
+
+export const resetPasswordSchema = z
+	.object({
+		newPassword: newPasswordField,
+		confirmPassword: z.string().min(1, 'Confirme a nova senha.'),
+	})
+	.refine((data) => data.newPassword === data.confirmPassword, {
+		message: 'As senhas não coincidem.',
+		path: ['confirmPassword'],
+	});
+
+export const changePasswordSchema = z
+	.object({
+		currentPassword: z.string().min(1, 'Informe a senha atual.'),
+		newPassword: newPasswordField,
+		confirmPassword: z.string().min(1, 'Confirme a nova senha.'),
+	})
+	.refine((data) => data.newPassword === data.confirmPassword, {
+		message: 'As senhas não coincidem.',
+		path: ['confirmPassword'],
+	})
+	.refine((data) => data.newPassword !== data.currentPassword, {
+		message: 'A nova senha deve ser diferente da atual.',
+		path: ['newPassword'],
+	});
 
 export const signUpSchema = z
 	.object({

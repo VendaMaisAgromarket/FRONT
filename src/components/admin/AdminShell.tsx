@@ -2,6 +2,7 @@
 
 import AdminModeSwitch from "@/components/admin/AdminModeSwitch";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import SessionExpiryGuard from "@/components/SessionExpiryGuard";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import TanstackProvider from "@/providers/tanstackProvider";
@@ -26,6 +27,7 @@ export default function AdminShell({ user, children }: AdminShellProps) {
 
 	return (
 		<TanstackProvider>
+			<SessionExpiryGuard />
 			<div className="min-h-screen bg-muted/30">
 				<header className="border-b border-b-gray-5 bg-white">
 					<div className="flex items-center justify-between gap-4 px-4 py-3">

@@ -10,11 +10,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"; // Importe todos os componentes do Form
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { signInSchema } from "@/lib/schemas"; // Importe seu schema e o tipo
 import { cleanNumericString, formatCpfCnpj } from "@/utils/functions";
 import { zodResolver } from "@hookform/resolvers/zod"; // Importe o zodResolver
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Info } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState, useTransition } from "react";
@@ -24,7 +25,15 @@ import z from "zod";
 
 type LoginFormInputs = z.infer<typeof signInSchema>;
 
-export default function LoginForm() {
+export default function LoginForm({
+  notice,
+  redirectTo,
+}: {
+  /** Aviso vindo de `?reason=` (sessão expirada, senha alterada…). */
+  notice?: string;
+  /** Rota interna (já validada) para voltar após o login. */
+  redirectTo?: string | null;
+}) {
   const [showPassword, setShowPassword] = useState(false);
   const form = useForm<LoginFormInputs>({
     resolver: zodResolver(signInSchema),
@@ -55,9 +64,9 @@ export default function LoginForm() {
       }
     } else if (state?.message && !state.errors) {
       toast.success(state.message);
-      router.replace("/market");
+      router.replace(redirectTo ?? "/market");
     }
-  }, [state, form, router]);
+  }, [state, form, router, redirectTo]);
 
   return (
     <Form {...form}>
@@ -68,6 +77,12 @@ export default function LoginForm() {
         <p className="text-sm text-center mb-6">
           Preencha as informações para acessar sua conta.
         </p>
+        {notice && (
+          <Alert className="border-primary/40 bg-primary/5">
+            <Info className="h-4 w-4" />
+            <AlertDescription>{notice}</AlertDescription>
+          </Alert>
+        )}
         <FormField
           control={form.control}
           name="identifier"
@@ -132,7 +147,7 @@ export default function LoginForm() {
           {pending ? "Aguarde" : "Entrar"}
         </Button>
         <Link
-          href="/recover-password"
+          href="/forgot-password"
           className="text-xs text-blue-600 text-right mt-2 block"
         >
           Esqueci minha senha

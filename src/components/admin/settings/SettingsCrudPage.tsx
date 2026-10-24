@@ -39,6 +39,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import useSettingsCrud from "@/hooks/useSettingsCrud";
+import { loginUrl } from "@/lib/authRedirect";
 import { AlertCircle, Lock, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { ReactNode, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -307,6 +308,10 @@ export default function SettingsCrudPage<T>({ config }: { config: SettingsCrudCo
 		}
 		if (!res.ok) {
 			setFormError(mutationError(res, "salvar", config.inUseDescription));
+			return;
+		}
+		if (res.sessionEnded) {
+			window.location.assign(loginUrl("password-changed"));
 			return;
 		}
 

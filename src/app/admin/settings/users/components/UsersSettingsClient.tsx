@@ -4,7 +4,7 @@ import SettingsCrudPage, {
 	SettingsCrudConfig,
 } from "@/components/admin/settings/SettingsCrudPage";
 import { Badge } from "@/components/ui/badge";
-import { isValidCnpj, isValidCpf } from "@/lib/validation";
+import { PASSWORD_REGEX, isValidCnpj, isValidCpf } from "@/lib/validation";
 import {
 	cleanNumericString,
 	formatCnpj,
@@ -32,7 +32,6 @@ const ROLE_LABELS: Record<string, string> = {
 	admin: "Administrador",
 };
 
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
 
 const config: SettingsCrudConfig<AdminUser> = {
 	resource: "users",
