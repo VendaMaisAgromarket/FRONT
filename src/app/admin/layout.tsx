@@ -1,7 +1,8 @@
 import AdminShell from "@/components/admin/AdminShell";
+import { sessionExpiredUrl } from "@/lib/authRedirect";
 import { verifySession } from "@/lib/session";
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
 
@@ -24,7 +25,7 @@ export default async function AdminLayout({
 	});
 
 	if (!userRes.ok) {
-		redirect("/login");
+		redirect(sessionExpiredUrl((await headers()).get("x-pathname")));
 	}
 
 	const user = await userRes.json();

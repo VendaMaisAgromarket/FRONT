@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import {
 	Form,
 	FormControl,
+	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -122,6 +123,9 @@ export default function EditProfileForm({ initialData }: Props) {
 									className="w-full"
 								/>
 							</FormControl>
+							<FormDescription className="text-xs">
+								Usaremos este e-mail para avisos sobre seus pedidos e para recuperação de senha.
+							</FormDescription>
 							<FormMessage />
 						</FormItem>
 					)}

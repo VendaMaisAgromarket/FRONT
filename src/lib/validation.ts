@@ -147,3 +147,6 @@ export function isValidCnpj(value: string): boolean {
 	};
 	return digit(12) === Number(cnpj[12]) && digit(13) === Number(cnpj[13]);
 }
+
+/** Mesma regra de senha do backend: 8+ caracteres, maiúscula, minúscula, número e caractere especial. */
+export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;

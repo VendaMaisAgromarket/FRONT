@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userInfoStore";
 import { formatCpfCnpj } from "@/utils/functions";
 import { uploadProfilePhoto } from "@/utils/uploadProfilePhoto";
-import { Camera, Eye, Pencil } from "lucide-react";
+import { Camera, Eye, KeyRound, Pencil } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
@@ -305,6 +305,21 @@ export default function PerfilContent({ user, userId }: UserProps) {
 					{/* <Button className="mt-2 flex items-center gap-2 text-white bg-primary hover:bg-success">
 						<UserRoundPen size={16} /> Alterar tipo de usuário
 					</Button> */}
+				</div>
+
+				<hr className="border-gray-200" />
+
+				{/* Segurança */}
+				<div className="space-y-2">
+					<h3 className="font-medium">Segurança</h3>
+					<p className="text-sm text-muted-foreground">
+						Ao alterar a senha, todas as sessões abertas são encerradas.
+					</p>
+					<Link href="/market/profile/personal-info/change-password">
+						<Button className="mt-2 flex items-center gap-2 text-white bg-primary hover:bg-success">
+							<KeyRound size={16} /> Alterar senha
+						</Button>
+					</Link>
 				</div>
 
 				<hr className="border-gray-200" />

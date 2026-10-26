@@ -1,7 +1,8 @@
 'use server'
 
 import { cookies } from 'next/headers'
-import { verifySession } from '@/lib/session'
+import { changePasswordSchema } from '@/lib/schemas'
+import { deleteSession, verifySession } from '@/lib/session'
 
 export interface FullUserData {
     id: number;
@@ -59,6 +60,92 @@ export async function getUserData(): Promise<FullUserData> {
         : 'Produtor Rural',
     valid: data.valid,
     img: data.img,
+  }
+}
+
+export type ChangePasswordResult =
+  | { ok: true }
+  | {
+      ok: false
+      reason: 'wrong-current' | 'invalid' | 'session-expired' | 'error'
+      field?: 'currentPassword' | 'newPassword'
+      message: string
+    }
+
+/**
+ * Troca a senha pelo perfil (PUT /user/:id com `password`). O back não pede a senha atual,
+ * então ela é conferida antes via /auth/login. Após o 200 o back invalida todos os JWTs do
+ * usuário — inclusive este —, por isso a sessão local é apagada aqui.
+ */
+export async function changeOwnPassword(data: {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}): Promise<ChangePasswordResult> {
+  const parsed = changePasswordSchema.safeParse(data)
+  if (!parsed.success) {
+    const errors = parsed.error.flatten().fieldErrors
+    return {
+      ok: false,
+      reason: 'invalid',
+      field: errors.currentPassword ? 'currentPassword' : 'newPassword',
+      message:
+        errors.currentPassword?.[0] ?? errors.newPassword?.[0] ?? errors.confirmPassword?.[0] ?? 'Dados inválidos.',
+    }
+  }
+  const { currentPassword, newPassword } = parsed.data
+
+  const token = (await cookies()).get('session')?.value
+  if (!token) {
+    return { ok: false, reason: 'session-expired', message: 'Sua sessão expirou. Entre novamente.' }
+  }
+  const { jwt, id } = await verifySession(token)
+
+  try {
+    const userRes = await fetch(`${process.env.API_URL}/user/${id}`, {
+      headers: { Authorization: `Bearer ${jwt}` },
+      cache: 'no-store',
+    })
+    if (userRes.status === 401) {
+      return { ok: false, reason: 'session-expired', message: 'Sua sessão expirou. Entre novamente.' }
+    }
+    if (!userRes.ok) {
+      return { ok: false, reason: 'error', message: 'Erro ao buscar dados do usuário.' }
+    }
+    const user = await userRes.json()
+
+    // CPF/CNPJ já vêm formatados do back, que é o formato que o login exige.
+    const loginRes = await fetch(`${process.env.API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(
+        user.cpf ? { cpf: user.cpf, password: currentPassword } : { cnpj: user.cnpj, password: currentPassword }
+      ),
+    })
+    if (loginRes.status === 401) {
+      return { ok: false, reason: 'wrong-current', field: 'currentPassword', message: 'Senha atual incorreta.' }
+    }
+    if (!loginRes.ok) {
+      return { ok: false, reason: 'error', message: 'Erro ao conferir a senha atual. Tente novamente.' }
+    }
+
+    const res = await fetch(`${process.env.API_URL}/user/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
+      body: JSON.stringify({ password: newPassword }),
+    })
+    if (res.status === 401) {
+      return { ok: false, reason: 'session-expired', message: 'Sua sessão expirou. Entre novamente.' }
+    }
+    if (!res.ok) {
+      return { ok: false, reason: 'error', message: 'Erro ao alterar a senha. Tente novamente.' }
+    }
+
+    await deleteSession()
+    return { ok: true }
+  } catch (err) {
+    console.error('Erro ao alterar senha pelo perfil: ', (err as Error)?.message)
+    return { ok: false, reason: 'error', message: 'Erro ao alterar a senha. Tente novamente.' }
   }
 }
 
