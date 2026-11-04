@@ -2,6 +2,7 @@
 
 import { editAddress } from "@/actions/address";
 import { AddressFormValues } from "@/lib/schemas";
+import { useNotificationsStore } from "@/store/notificationsStore";
 import { Address } from "@/types/types";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -12,10 +13,12 @@ export default function EditAddressForm({ data: address }: { data: Address }) {
 		...address,
 	};
 	const router = useRouter();
+	const refreshUnreadCount = useNotificationsStore((s) => s.refreshUnreadCount);
 
 	async function onSubmit(data: AddressFormValues) {
 		try {
 			await editAddress(address.id, data);
+			refreshUnreadCount({ silent: true });
 			toast.success("Endereço editado com sucesso.");
 			router.push("/market/profile/personal-info/addresses");
 		} catch (error) {

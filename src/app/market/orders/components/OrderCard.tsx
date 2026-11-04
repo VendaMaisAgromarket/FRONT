@@ -151,7 +151,7 @@ export function OrderCard({
         throw new Error(data.error ?? "Erro ao autorizar colheita");
       }
       setHarvestAuthorized(true);
-      refreshUnreadCount();
+      refreshUnreadCount({ silent: true });
     } catch (e: unknown) {
       setHarvestError(e instanceof Error ? e.message : "Erro ao autorizar colheita");
     } finally {

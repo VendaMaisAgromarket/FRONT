@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { FullUserData, getUserData } from "@/actions/user";
 import ChangePhotoModal from "@/components/profile/ChangePhotoModal";
 import { Button } from "@/components/ui/button";
+import { useNotificationsStore } from "@/store/notificationsStore";
 import { useUserStore } from "@/store/userInfoStore";
 import { formatCpfCnpj } from "@/utils/functions";
 import { uploadProfilePhoto } from "@/utils/uploadProfilePhoto";
@@ -63,6 +64,7 @@ export default function PerfilContent({ user, userId }: UserProps) {
 	const [addrError, setAddrError] = useState<string | null>(null);
 	const [isChangePhotoModalOpen, setIsChangePhotoModalOpen] = useState(false);
 	const { user: storeUser, setUser } = useUserStore();
+	const refreshUnreadCount = useNotificationsStore((s) => s.refreshUnreadCount);
 	const [currentPhoto, setCurrentPhoto] = useState<string>(
 		storeUser?.img ?? ""
 	);
@@ -193,6 +195,7 @@ export default function PerfilContent({ user, userId }: UserProps) {
 				const newUrl = data?.img || data?.profilePhotoUrl || data?.url;
 				if (newUrl) {
 					setCurrentPhoto(newUrl);
+					refreshUnreadCount({ silent: true });
 					toast.success("Foto de perfil atualizada!");
 					// atualizar a navbar em tempo real
 					if (storeUser) {

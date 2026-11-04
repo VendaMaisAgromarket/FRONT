@@ -805,7 +805,11 @@ export type NotificationType =
 	| "WEIGHT_REGISTERED"
 	| "FINAL_PAYMENT_RECEIVED"
 	| "ORDER_STATUS_CHANGED"
-	| "PRODUCT_HARVEST_REMINDER";
+	| "PRODUCT_HARVEST_REMINDER"
+	| "PROFILE_UPDATED"
+	| "ADDRESS_CREATED"
+	| "ADDRESS_UPDATED"
+	| "ADDRESS_DELETED";
 
 export type NotificationData = {
 	role?: "buyer" | "seller";
@@ -818,6 +822,11 @@ export type NotificationData = {
 	productId?: string | number;
 	harvestAt?: string;
 	daysLeft?: number;
+	// PROFILE_UPDATED: rótulos já em PT ("nome", "e-mail", "senha"…)
+	fields?: string[];
+	// ADDRESS_*
+	addressId?: string;
+	action?: "created" | "updated" | "default" | "deleted";
 	[key: string]: unknown;
 };
 

@@ -4,10 +4,12 @@ import { ptBR } from "date-fns/locale";
 import {
 	Bell,
 	CheckCircle2,
+	MapPin,
 	Package,
 	RefreshCw,
 	Scale,
 	Sprout,
+	UserRoundCog,
 	Wallet,
 	XCircle,
 	type LucideIcon,
@@ -22,29 +24,45 @@ const iconByType: Record<string, LucideIcon> = {
 	FINAL_PAYMENT_RECEIVED: Wallet,
 	ORDER_STATUS_CHANGED: RefreshCw,
 	PRODUCT_HARVEST_REMINDER: Sprout,
+	PROFILE_UPDATED: UserRoundCog,
+	ADDRESS_CREATED: MapPin,
+	ADDRESS_UPDATED: MapPin,
+	ADDRESS_DELETED: MapPin,
 };
 
 export function getNotificationIcon(type: string): LucideIcon {
 	return iconByType[type] ?? Bell;
 }
 
-const sellerTypes = new Set(["NEW_ORDER", "DOWN_PAYMENT_RECEIVED", "FINAL_PAYMENT_RECEIVED"]);
+// Rotas também usadas pelo back nos links dos e-mails — manter alinhado.
+export const NOTIFICATION_ROUTES = {
+	sellerSales: "/market/orders",
+	buyerPurchases: "/market/history",
+	profile: "/market/profile/personal-info",
+	addresses: "/market/profile/personal-info/addresses",
+	editProduct: "/market/edit-product",
+} as const;
 
-// Destino do clique. Vendas abrem o detalhe no painel do lado do usuário
-// (vendedor → /market/orders, comprador → /market/history); o lembrete de colheita
-// abre a edição do anúncio. Tipos desconhecidos caem no saleId/productId preenchido.
+// Destino do clique. Vendas: o papel vem SEMPRE de `data.role` — o mesmo tipo (NEW_ORDER,
+// ORDER_ACCEPTED, WEIGHT_REGISTERED…) chega para comprador e vendedor. Perfil e endereços vão
+// para as páginas do perfil (nunca para um endereço específico: ele pode ter sido removido).
+// O lembrete de colheita abre a edição do anúncio. Tipo desconhecido sem saleId/productId → sem link.
 export function getNotificationHref(n: AppNotification): string | null {
+	if (n.type === "PROFILE_UPDATED") return NOTIFICATION_ROUTES.profile;
+	if (n.type.startsWith("ADDRESS_")) return NOTIFICATION_ROUTES.addresses;
+
 	const productId = n.productId ?? n.data?.productId ?? null;
 
 	if (n.type === "PRODUCT_HARVEST_REMINDER" || (!n.saleId && productId != null)) {
 		return productId != null
-			? `/market/edit-product/${encodeURIComponent(String(productId))}`
+			? `${NOTIFICATION_ROUTES.editProduct}/${encodeURIComponent(String(productId))}`
 			: null;
 	}
 
 	if (n.saleId) {
-		const role = n.data?.role ?? (sellerTypes.has(n.type) ? "seller" : "buyer");
-		const base = role === "seller" ? "/market/orders" : "/market/history";
+		const role = n.data?.role;
+		if (role !== "seller" && role !== "buyer") return null;
+		const base = role === "seller" ? NOTIFICATION_ROUTES.sellerSales : NOTIFICATION_ROUTES.buyerPurchases;
 		return `${base}?saleId=${encodeURIComponent(n.saleId)}`;
 	}
 

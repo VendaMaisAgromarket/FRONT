@@ -16,7 +16,7 @@ export default function useNotificationsPolling(enabled: boolean) {
 		function start() {
 			if (interval) return;
 			refreshUnreadCount();
-			interval = setInterval(refreshUnreadCount, POLLING_INTERVAL_MS);
+			interval = setInterval(() => refreshUnreadCount(), POLLING_INTERVAL_MS);
 		}
 
 		function stop() {

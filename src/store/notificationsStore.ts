@@ -9,7 +9,12 @@ interface NotificationsState {
 	stopped: boolean;
 	setUnreadCount: (count: number) => void;
 	decrementUnread: () => void;
-	refreshUnreadCount: () => Promise<void>;
+	/**
+	 * `silent`: atualiza o contador sem o toast "novas notificações". Use após uma ação do
+	 * próprio usuário (salvar perfil/endereço, aceitar pedido…), que agora também o notifica:
+	 * a tela já mostra o toast de sucesso, e a notificação não deve gerar outro.
+	 */
+	refreshUnreadCount: (options?: { silent?: boolean }) => Promise<void>;
 	stopPolling: () => void;
 }
 
@@ -23,12 +28,12 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
 		const next = Math.max(0, get().unreadCount - 1);
 		set({ unreadCount: next, lastFetchedCount: next });
 	},
-	refreshUnreadCount: async () => {
+	refreshUnreadCount: async (options) => {
 		if (get().stopped) return;
 		try {
 			const count = await getUnreadCount();
 			const previous = get().lastFetchedCount;
-			if (previous !== null && count > previous) {
+			if (!options?.silent && previous !== null && count > previous) {
 				toast("Você tem novas notificações", {
 					action: {
 						label: "Ver",
