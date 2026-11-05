@@ -2,10 +2,21 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Form,
@@ -18,6 +29,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useNotificationsStore } from "@/store/notificationsStore";
 import { Loader2, Pencil, XCircle } from "lucide-react";
 
 const profileSchema = z.object({
@@ -64,7 +76,14 @@ export default function EditProfileForm({ initialData }: Props) {
 		mode: "onBlur",
 	});
 
-	const onSubmit = async (values: ProfileFormValues) => {
+	const refreshUnreadCount = useNotificationsStore((s) => s.refreshUnreadCount);
+	const [isSaving, setIsSaving] = useState(false);
+	// Valores aguardando a confirmação da troca de e-mail.
+	const [pendingEmailChange, setPendingEmailChange] = useState<ProfileFormValues | null>(null);
+	const isBusy = form.formState.isSubmitting || isSaving;
+
+	async function save(values: ProfileFormValues) {
+		setIsSaving(true);
 		try {
 			const res = await fetch("/api/user", {
 				method: "PUT",
@@ -82,11 +101,25 @@ export default function EditProfileForm({ initialData }: Props) {
 				toast.error(data.error || "Erro ao salvar os dados.");
 			} else {
 				toast.success("Dados atualizados com sucesso!");
+				// Alteração real gera PROFILE_UPDATED: o sino reflete sem toast extra.
+				refreshUnreadCount({ silent: true });
 				setTimeout(() => router.push("/market/profile/personal-info"), 1000);
 			}
 		} catch {
 			toast.error("Erro de rede ao salvar.");
+		} finally {
+			setIsSaving(false);
 		}
+	}
+
+	const onSubmit = async (values: ProfileFormValues) => {
+		const emailChanged =
+			values.email.trim().toLowerCase() !== initialData.email.trim().toLowerCase();
+		if (emailChanged) {
+			setPendingEmailChange(values);
+			return;
+		}
+		await save(values);
 	};
 
 	return (
@@ -119,7 +152,7 @@ export default function EditProfileForm({ initialData }: Props) {
 									{...field}
 									type="text"
 									placeholder="seu.email@dominio.com"
-									disabled={form.formState.isSubmitting}
+									disabled={isBusy}
 									className="w-full"
 								/>
 							</FormControl>
@@ -145,7 +178,7 @@ export default function EditProfileForm({ initialData }: Props) {
 									{...field}
 									type="text"
 									placeholder="(00) 0 0000-0000"
-									disabled={form.formState.isSubmitting}
+									disabled={isBusy}
 									onChange={(e) => {
 										const inputType = (e.nativeEvent as InputEvent).inputType;
 										const raw = e.target.value;
@@ -192,10 +225,10 @@ export default function EditProfileForm({ initialData }: Props) {
 				<div className="flex flex-col sm:flex-row gap-4 pt-4">
 					<Button
 						type="submit"
-						disabled={form.formState.isSubmitting}
+						disabled={isBusy}
 						className="flex-1 flex items-center justify-center gap-2 text-gray-50 bg-primary hover:bg-success transition h-12 disabled:bg-gray-400 disabled:cursor-auto disabled:opacity-50"
 					>
-						{form.formState.isSubmitting ? (
+						{isBusy ? (
 							<>
 								<Loader2 size={16} className="animate-spin" />
 								Salvando…
@@ -210,7 +243,7 @@ export default function EditProfileForm({ initialData }: Props) {
 
 					<Button
 						type="button"
-						disabled={form.formState.isSubmitting}
+						disabled={isBusy}
 						onClick={() => router.push("/market/profile/personal-info")}
 						className="flex-1 flex items-center justify-center gap-2 text-gray-50 bg-red-500 hover:bg-red-600 transition h-12 disabled:bg-gray-400 disabled:cursor-auto disabled:opacity-50"
 					>
@@ -219,6 +252,38 @@ export default function EditProfileForm({ initialData }: Props) {
 					</Button>
 				</div>
 			</form>
+
+			<AlertDialog
+				open={pendingEmailChange !== null}
+				onOpenChange={(open) => !open && setPendingEmailChange(null)}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Confirmar troca de e-mail</AlertDialogTitle>
+						<AlertDialogDescription>
+							Você passará a receber os avisos sobre seus pedidos e a recuperação
+							de senha em{" "}
+							<span className="text-primary font-semibold break-all">
+								{pendingEmailChange?.email.trim()}
+							</span>
+							. O e-mail atual receberá um aviso de segurança sobre a troca.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancelar</AlertDialogCancel>
+						<AlertDialogAction
+							className="bg-primary"
+							onClick={() => {
+								const values = pendingEmailChange;
+								setPendingEmailChange(null);
+								if (values) save(values);
+							}}
+						>
+							Confirmar e salvar
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</Form>
 	);
 }

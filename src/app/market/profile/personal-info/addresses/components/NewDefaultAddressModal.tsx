@@ -10,6 +10,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Address } from "@/types/types";
+import { useNotificationsStore } from "@/store/notificationsStore";
 import { Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 
@@ -24,10 +25,12 @@ export default function NewDefaultAddressModal({
 	setIsOpen,
 	address,
 }: NewDefaultAddressModalProps) {
+	const refreshUnreadCount = useNotificationsStore((s) => s.refreshUnreadCount);
 	async function handleSetDefaultAddress() {
 		const res = await setNewDefaultAddress(address.id, address.alias);
 
 		if (res.sucess) {
+			refreshUnreadCount({ silent: true });
 			return toast.success(res.message);
 		}
 
