@@ -166,6 +166,7 @@ export type MarketProductCardType = {
 	images_Path: string[];
 	seller?: {
 		name: string;
+		farmCertifications?: SellerFarmCertification[];
 	};
 };
 
@@ -809,10 +810,21 @@ export type NotificationType =
 	| "PROFILE_UPDATED"
 	| "ADDRESS_CREATED"
 	| "ADDRESS_UPDATED"
-	| "ADDRESS_DELETED";
+	| "ADDRESS_DELETED"
+	| "FARM_CERTIFICATION_SUBMITTED"
+	| "FARM_CERTIFICATION_APPROVED"
+	| "FARM_CERTIFICATION_REJECTED"
+	| "FARM_CERTIFICATION_REVOKED"
+	| "FARM_CERTIFICATION_EXPIRING"
+	| "FARM_CERTIFICATION_EXPIRED";
 
 export type NotificationData = {
-	role?: "buyer" | "seller";
+	// Certificação de fazenda usa "admin" | "producer"; vendas usam "buyer" | "seller"
+	role?: "buyer" | "seller" | "admin" | "producer";
+	// FARM_CERTIFICATION_*
+	certificationId?: string;
+	validUntil?: string;
+	reason?: string;
 	orderNumber?: number;
 	status?: string;
 	phase?: string;
@@ -847,4 +859,138 @@ export type NotificationsPage = {
 	items: AppNotification[];
 	nextCursor: string | null;
 	unreadCount: number;
+};
+
+// Certificação de fazenda (/certifications/farm)
+export type FarmCertificationType =
+	| "ORGANIC_SISORG"
+	| "GLOBALGAP"
+	| "RAINFOREST_ALLIANCE"
+	| "FAIR_TRADE"
+	| "OTHER";
+
+export type FarmCertificationStatus =
+	| "PENDING"
+	| "APPROVED"
+	| "REJECTED"
+	| "EXPIRED"
+	| "REVOKED";
+
+export type FarmCertificationDocType = "CERTIFICATE" | "AUDIT_REPORT" | "OTHER";
+
+export type FarmCertificationEventAction =
+	| "SUBMITTED"
+	| "RESUBMITTED"
+	| "APPROVED"
+	| "REJECTED"
+	| "REVOKED"
+	| "EXPIRED";
+
+export type FarmCertificationDocument = {
+	id: string;
+	docType: FarmCertificationDocType;
+	originalName: string;
+	mimeType: string;
+	sizeBytes: number;
+	uploadedAt: string;
+	uploadedBy?: { id: string; name: string } | null;
+};
+
+export type FarmCertificationEvent = {
+	id: string;
+	action: FarmCertificationEventAction;
+	fromStatus: FarmCertificationStatus | null;
+	toStatus: FarmCertificationStatus;
+	note: string | null;
+	createdAt: string;
+	// null = sistema (vencimento automático)
+	actor: { id: string; name: string; role: string } | null;
+	document: { id: string; docType: FarmCertificationDocType; originalName: string } | null;
+};
+
+export type FarmCertification = {
+	id: string;
+	userId: string;
+	farmName: string;
+	city: string;
+	uf: string;
+	ccir: string | null;
+	car: string | null;
+	// Decimal do banco: vem como string
+	areaHectares: string;
+	type: FarmCertificationType;
+	certifierName: string;
+	certifierCnpj: string;
+	certificateNumber: string;
+	// Dias de calendário: início do dia em Brasília (…T03:00:00.000Z)
+	issuedAt: string;
+	validUntil: string;
+	origin: "UPLOADED" | "PURCHASED";
+	status: FarmCertificationStatus;
+	reviewedById: string | null;
+	reviewedAt: string | null;
+	rejectionReason: string | null;
+	reviewNotes: string | null;
+	createdAt: string;
+	updatedAt: string;
+	// Selo no ar hoje. Use sempre este campo para exibir o selo, nunca só o status.
+	badgeActive: boolean;
+	documents: FarmCertificationDocument[];
+};
+
+export type FarmCertificationDetail = FarmCertification & {
+	reviewedBy: { id: string; name: string } | null;
+	events: FarmCertificationEvent[];
+	// Só para admin
+	user?: {
+		id: string;
+		name: string;
+		email: string;
+		phone_number: string | null;
+		cpf: string | null;
+		cnpj: string | null;
+		ccir: string | null;
+	};
+};
+
+export type FarmCertificationAdminItem = Omit<FarmCertification, "documents" | "badgeActive"> & {
+	badgeActive?: boolean;
+	user: { id: string; name: string; email: string };
+	reviewedBy: { id: string; name: string } | null;
+	_count: { documents: number };
+};
+
+export type FarmCertificationAdminPage = {
+	items: FarmCertificationAdminItem[];
+	nextCursor: string | null;
+};
+
+export type FarmCertificationDocumentUrl = {
+	url: string;
+	expiresIn: number;
+	originalName: string;
+	mimeType: string;
+};
+
+export type FarmCertificationBadgeItem = {
+	id: string;
+	type: FarmCertificationType;
+	certifierName: string;
+	certificateNumber: string;
+	city: string;
+	uf: string;
+	validUntil: string;
+};
+
+export type FarmCertificationBadge = {
+	userId: string;
+	certified: boolean;
+	certifications: FarmCertificationBadgeItem[];
+};
+
+// Formato reduzido que vem em product.seller.farmCertifications (já filtrado pelas ativas)
+export type SellerFarmCertification = {
+	type: FarmCertificationType;
+	certifierName: string;
+	validUntil: string;
 };

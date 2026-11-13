@@ -1,4 +1,5 @@
 import {
+	BadgeCheck,
 	Bell,
 	Apple,
 	ArrowDownAZ,
@@ -24,7 +25,15 @@ export const recentSearchesData = [
 	{ id: 5, searched: "Abacaxi" },
 ];
 
-export const sectionsListData = [
+export type MenuSection = {
+	icon: React.ReactNode;
+	title: string;
+	href: string;
+	type: string;
+	roles?: string[];
+};
+
+export const sectionsListData: { group: string; sections: MenuSection[] }[] = [
 	{
 		group: "Pessoal",
 		sections: [
@@ -77,6 +86,14 @@ export const sectionsListData = [
 				title: "Painel de vendas",
 				href: "/market/orders",
 				type: "default",
+			},
+			{
+				icon: <BadgeCheck size={20} />,
+				title: "Certificações",
+				href: "/market/certifications/farm",
+				type: "default",
+				// Só aparece para esses papéis (sem `roles` = todos)
+				roles: ["producer"],
 			},
 		],
 	},
@@ -525,3 +542,11 @@ export const fruitsCategories = [
 		imageAlt: "Alface",
 	},
 ];
+
+// Itens de menu visíveis para o papel do usuário logado
+export function sectionsForRole(role?: string | null) {
+	return sectionsListData.map((g) => ({
+		...g,
+		sections: g.sections.filter((s) => !s.roles || (role != null && s.roles.includes(role))),
+	}));
+}

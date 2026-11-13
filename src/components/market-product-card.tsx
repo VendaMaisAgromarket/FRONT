@@ -2,6 +2,7 @@ import { MarketProductCardType } from '@/types/types';
 import Link from 'next/link';
 import ProductCardImageCarousel from './ProductCardImageCarousel';
 import { moneyMask } from '@/utils/functions';
+import FarmCertifiedBadge from './certifications/FarmCertifiedBadge';
 
 export default function MarketProductCard({
 	product,
@@ -34,6 +35,10 @@ export default function MarketProductCard({
 							</span>
 						</h4>
 					)}
+					<FarmCertifiedBadge
+						certifications={product.seller?.farmCertifications}
+						className="mt-1"
+					/>
 				</div>
 			</div>
 		</Link>

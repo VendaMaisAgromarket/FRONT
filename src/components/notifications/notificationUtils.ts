@@ -1,8 +1,13 @@
+import { CERTIFICATION_ROUTES } from "@/components/certifications/certificationUtils";
 import { AppNotification } from "@/types/types";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
+	BadgeCheck,
 	Bell,
+	ShieldAlert,
+	ShieldCheck,
+	ShieldX,
 	CheckCircle2,
 	MapPin,
 	Package,
@@ -28,6 +33,12 @@ const iconByType: Record<string, LucideIcon> = {
 	ADDRESS_CREATED: MapPin,
 	ADDRESS_UPDATED: MapPin,
 	ADDRESS_DELETED: MapPin,
+	FARM_CERTIFICATION_SUBMITTED: ShieldCheck,
+	FARM_CERTIFICATION_APPROVED: BadgeCheck,
+	FARM_CERTIFICATION_REJECTED: ShieldX,
+	FARM_CERTIFICATION_REVOKED: ShieldX,
+	FARM_CERTIFICATION_EXPIRING: ShieldAlert,
+	FARM_CERTIFICATION_EXPIRED: ShieldAlert,
 };
 
 export function getNotificationIcon(type: string): LucideIcon {
@@ -47,7 +58,19 @@ export const NOTIFICATION_ROUTES = {
 // ORDER_ACCEPTED, WEIGHT_REGISTERED…) chega para comprador e vendedor. Perfil e endereços vão
 // para as páginas do perfil (nunca para um endereço específico: ele pode ter sido removido).
 // O lembrete de colheita abre a edição do anúncio. Tipo desconhecido sem saleId/productId → sem link.
+// Certificação de fazenda (sem saleId/productId): admin → tela de avaliação; produtor → lista.
 export function getNotificationHref(n: AppNotification): string | null {
+	if (n.type.startsWith("FARM_CERTIFICATION_") || n.data?.certificationId) {
+		const certificationId = n.data?.certificationId;
+		const isAdmin = n.data?.role === "admin" || n.type === "FARM_CERTIFICATION_SUBMITTED";
+		if (isAdmin) {
+			return certificationId
+				? CERTIFICATION_ROUTES.adminDetail(String(certificationId))
+				: CERTIFICATION_ROUTES.adminList;
+		}
+		return CERTIFICATION_ROUTES.producerList;
+	}
+
 	if (n.type === "PROFILE_UPDATED") return NOTIFICATION_ROUTES.profile;
 	if (n.type.startsWith("ADDRESS_")) return NOTIFICATION_ROUTES.addresses;
 

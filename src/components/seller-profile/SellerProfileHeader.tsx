@@ -1,13 +1,16 @@
+import { FarmCertifiedBadgeByUser } from "@/components/certifications/FarmCertifiedBadge";
 import Image from "next/image";
 
 type SellerProfileHeaderProps = {
     name: string;
     img?: string;
+    sellerId?: string;
 };
 
 export default function SellerProfileHeader({
     name,
     img,
+    sellerId,
 }: SellerProfileHeaderProps) {
     return (
         <header className="w-full">
@@ -49,6 +52,9 @@ export default function SellerProfileHeader({
                                     <h1 className="mt-1 text-lg md:text-xl lg:text-2xl font-semibold text-gray-900">
                                         {name}
                                     </h1>
+                                    {sellerId && (
+                                        <FarmCertifiedBadgeByUser userId={sellerId} className="mt-1" />
+                                    )}
                                 </div>
                             </div>
                         </div>

@@ -73,6 +73,7 @@ export default async function ProductDetail({
 					name={res.seller.name}
 					products={10} //TODO: alterar esse atributo quando o backend retornar a quantidade de produtos
 					sellerId={res.seller.id} // ✅ passa o ID do vendedor para construir a rota correta
+					farmCertifications={res.seller.farmCertifications}
 				/>
 			</div>
 

@@ -3,7 +3,7 @@ import AdminModeSwitch from "@/components/admin/AdminModeSwitch";
 import { Button } from "@/components/ui/button";
 import { SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useUserStore } from "@/store/userInfoStore";
-import { sectionsListData } from "@/utils/data";
+import { sectionsForRole } from "@/utils/data";
 import { ChevronRight, Home } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -74,7 +74,7 @@ export default function Sidemenu({ handleLogout }: SidemenuProps) {
 						</div>
 					)}
 				</div>
-				{sectionsListData.map((g, _) => {
+				{sectionsForRole(user?.role).map((g, _) => {
 					return (
 						<div
 							key={_}

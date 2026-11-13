@@ -1,9 +1,15 @@
 "use client";
 
+import {
+	CERTIFICATION_ROUTES,
+	PENDING_CHANGED_EVENT,
+} from "@/components/certifications/certificationUtils";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { listAdminFarmCertifications } from "@/services/farmCertifications";
 import {
 	AlertTriangle,
+	BadgeCheck,
 	ChevronDown,
 	CreditCard,
 	LayoutDashboard,
@@ -17,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const navItems = [
 	{
@@ -50,7 +56,39 @@ const navItems = [
 		icon: Truck,
 		enabled: true,
 	},
+	{
+		title: "Certificações de fazenda",
+		href: CERTIFICATION_ROUTES.adminList,
+		icon: BadgeCheck,
+		enabled: true,
+		pendingCounter: true,
+	},
 ];
+
+// Contador de pendentes: até 50 itens; "50+" quando houver mais páginas.
+function usePendingCertificationsCount(pathname: string) {
+	const [label, setLabel] = useState<string | null>(null);
+
+	useEffect(() => {
+		let active = true;
+		const load = () =>
+			listAdminFarmCertifications({ status: "PENDING", limit: 50 })
+				.then((p) => {
+					if (!active) return;
+					const n = p.items.length;
+					setLabel(n === 0 ? null : p.nextCursor ? "50+" : String(n));
+				})
+				.catch(() => active && setLabel(null));
+		load();
+		window.addEventListener(PENDING_CHANGED_EVENT, load);
+		return () => {
+			active = false;
+			window.removeEventListener(PENDING_CHANGED_EVENT, load);
+		};
+	}, [pathname]);
+
+	return label;
+}
 
 const settingsItems = [
 	{ title: "Usuários", href: "/admin/settings/users", icon: Users },
@@ -67,12 +105,14 @@ export default function AdminSidebar({
 	const pathname = usePathname();
 	const isSettingsRoute = pathname.startsWith("/admin/settings");
 	const [isSettingsOpen, setIsSettingsOpen] = useState(isSettingsRoute);
+	const pendingCount = usePendingCertificationsCount(pathname);
 
 	return (
 		<nav className="flex flex-col gap-1 p-3">
 			{navItems.map((item) => {
 				const Icon = item.icon;
-				const isActive = pathname === item.href;
+				const isActive =
+					pathname === item.href || (item.pendingCounter && pathname.startsWith(`${item.href}/`));
 
 				if (!item.enabled) {
 					return (
@@ -104,7 +144,18 @@ export default function AdminSidebar({
 						)}
 					>
 						<Icon size={18} />
-						{item.title}
+						<span className="flex-1">{item.title}</span>
+						{item.pendingCounter && pendingCount && (
+							<span
+								className={cn(
+									"min-w-5 rounded-full px-1.5 text-center text-xs font-semibold",
+									isActive ? "bg-white text-primary" : "bg-primary text-primary-foreground"
+								)}
+								aria-label={`${pendingCount} pendentes`}
+							>
+								{pendingCount}
+							</span>
+						)}
 					</Link>
 				);
 			})}
