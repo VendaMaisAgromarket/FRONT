@@ -23,24 +23,12 @@ type Props = {
 // Selo público "Fazenda certificada". Só mostra tipo, certificadora e validade:
 // nada de nome da fazenda, CNPJ, CCIR/CAR, área ou documentos.
 export default function FarmCertifiedBadge({ certifications, size = "sm", className }: Props) {
-	const [open, setOpen] = useState(false);
 	if (!certifications?.length) return null;
 
-	// Dentro de <Link> (card de produto): não deixa o clique navegar.
-	const stop = (e: React.SyntheticEvent) => {
-		e.preventDefault();
-		e.stopPropagation();
-	};
-
+	// Não renderizar dentro de <a>/<Link>: o gatilho é um botão (controle interativo).
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover>
 			<PopoverTrigger
-				// Controlado à mão: o preventDefault (para o <Link> do card não navegar) também
-				// impede o toggle automático do Radix.
-				onClick={(e) => {
-					stop(e);
-					setOpen((o) => !o);
-				}}
 				className={cn(
 					"inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 font-medium text-green-800 cursor-pointer hover:bg-green-100",
 					size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm",
@@ -51,7 +39,7 @@ export default function FarmCertifiedBadge({ certifications, size = "sm", classN
 				<BadgeCheck className={size === "sm" ? "size-3.5" : "size-4"} />
 				Fazenda certificada
 			</PopoverTrigger>
-			<PopoverContent className="w-72 p-3" onClick={stop} align="start">
+			<PopoverContent className="w-72 p-3" align="start">
 				<p className="mb-2 text-sm font-semibold text-gray-900">Fazenda certificada</p>
 				<ul className="space-y-2">
 					{certifications.map((c, i) => (

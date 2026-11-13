@@ -70,15 +70,23 @@ function usePendingCertificationsCount(pathname: string) {
 	const [label, setLabel] = useState<string | null>(null);
 
 	useEffect(() => {
+		// Só a resposta da requisição mais recente é aplicada: uma resposta antiga que chegue
+		// depois (ex.: carga inicial vs. atualização pós-aprovação) não restaura um valor velho.
+		let generation = 0;
 		let active = true;
-		const load = () =>
+		const load = () => {
+			const current = ++generation;
+			const isCurrent = () => active && current === generation;
 			listAdminFarmCertifications({ status: "PENDING", limit: 50 })
 				.then((p) => {
-					if (!active) return;
+					if (!isCurrent()) return;
 					const n = p.items.length;
 					setLabel(n === 0 ? null : p.nextCursor ? "50+" : String(n));
 				})
-				.catch(() => active && setLabel(null));
+				.catch(() => {
+					if (isCurrent()) setLabel(null);
+				});
+		};
 		load();
 		window.addEventListener(PENDING_CHANGED_EVENT, load);
 		return () => {

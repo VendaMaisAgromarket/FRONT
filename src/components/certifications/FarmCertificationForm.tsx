@@ -376,7 +376,8 @@ export default function FarmCertificationForm({ initial, defaultCcir, onSuccess,
 								setDragOver(false);
 								if (!submitting) addFiles(e.dataTransfer.files);
 							}}
-							className={`flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
+							// O input real é sr-only: o foco do teclado aparece como anel no rótulo
+							className={`flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40 focus-within:ring-offset-2 ${
 								dragOver ? "border-primary bg-primary/5" : "border-gray-300 hover:bg-gray-50"
 							}`}
 						>
