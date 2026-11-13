@@ -11,7 +11,7 @@ export default function MarketProductCard({
 }) {
 	return (
 		<Link href={`/market/product_detail/${product.id}`}>
-			<div className="flex flex-col bg-white w-64 h-72 rounded-xl border border-gray-5 space-y-3 overflow-hidden">
+			<div className="flex flex-col bg-white w-64 min-h-72 rounded-xl border border-gray-5 space-y-3 overflow-hidden">
 				<ProductCardImageCarousel images={product.images_Path} />
 				<div className="px-4 py-2">
 					<h4 className="text-lg">{product.name}</h4>

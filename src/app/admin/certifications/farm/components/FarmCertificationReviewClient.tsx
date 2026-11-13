@@ -43,7 +43,7 @@ import { FarmCertificationDetail, FarmCertificationDocument } from "@/types/type
 import { formatCpfCnpj, formatPhoneNumber } from "@/utils/functions";
 import { ArrowLeft, BadgeCheck, Eye, EyeOff, LoaderCircle } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type ActionKind = "approve" | "reject" | "revoke";
@@ -250,20 +250,26 @@ export default function FarmCertificationReviewClient({ id }: { id: string }) {
 function DocumentsWithPreview({ detail }: { detail: FarmCertificationDetail }) {
 	const [preview, setPreview] = useState<{ docId: string; url: string; mimeType: string } | null>(null);
 	const [loadingId, setLoadingId] = useState<string | null>(null);
+	// Só a resposta da seleção mais recente é aplicada; as anteriores são descartadas.
+	const requestRef = useRef(0);
 
 	async function toggle(doc: FarmCertificationDocument) {
+		const request = ++requestRef.current;
 		if (preview?.docId === doc.id) {
 			setPreview(null);
+			setLoadingId(null);
 			return;
 		}
 		try {
 			setLoadingId(doc.id);
 			const { url, mimeType } = await getFarmCertificationDocumentUrl(detail.id, doc.id);
+			if (request !== requestRef.current) return;
 			setPreview({ docId: doc.id, url, mimeType });
 		} catch (e) {
+			if (request !== requestRef.current) return;
 			toast.error(e instanceof Error ? e.message : "Não foi possível carregar o documento.");
 		} finally {
-			setLoadingId(null);
+			if (request === requestRef.current) setLoadingId(null);
 		}
 	}
 
@@ -278,7 +284,7 @@ function DocumentsWithPreview({ detail }: { detail: FarmCertificationDetail }) {
 						variant="ghost"
 						size="sm"
 						onClick={() => toggle(doc)}
-						disabled={loadingId === doc.id}
+						disabled={loadingId !== null}
 					>
 						{loadingId === doc.id ? (
 							<LoaderCircle className="size-4 animate-spin" />
@@ -364,9 +370,9 @@ function ApproveDialog({ open, detail, onClose, onDone, onConflict }: DialogProp
 				</DialogHeader>
 				<div className="space-y-4">
 					<div className="space-y-1.5">
-						<Label>Documento que embasa a aprovação</Label>
+						<Label htmlFor="approve-document">Documento que embasa a aprovação</Label>
 						<Select value={documentId} onValueChange={setDocumentId} disabled={submitting}>
-							<SelectTrigger className="w-full">
+							<SelectTrigger id="approve-document" className="w-full">
 								<SelectValue placeholder="Selecione o documento" />
 							</SelectTrigger>
 							<SelectContent>

@@ -66,6 +66,8 @@ export default function FarmCertificationsQueueClient() {
 		const generation = ++generationRef.current;
 		try {
 			setLoading(true);
+			// Um "Carregar mais" do filtro anterior foi invalidado e não vai limpar o próprio estado
+			setLoadingMore(false);
 			setError(null);
 			const page = await listAdminFarmCertifications({ status, type: typeFilter, limit: PAGE_SIZE });
 			if (generation !== generationRef.current) return;
