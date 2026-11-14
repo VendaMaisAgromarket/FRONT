@@ -1,4 +1,5 @@
 import { getUserData } from "@/actions/user";
+import { CERTIFICATION_ROUTES } from "@/components/certifications/certificationUtils";
 import Navbar from "@/components/navbar";
 import { sessionExpiredUrl } from "@/lib/authRedirect";
 import type { Metadata } from "next";
@@ -13,7 +14,8 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-// Só produtores. Destino dos e-mails e notificações enviados ao produtor.
+// Comprador e produtor (o mesmo usuário pode comprar e vender). Admin avalia pela fila do admin.
+// Destino dos e-mails e notificações enviados ao produtor.
 export default async function FarmCertificationsLayout({ children }: { children: ReactNode }) {
 	let role: string | null = null;
 	try {
@@ -21,7 +23,7 @@ export default async function FarmCertificationsLayout({ children }: { children:
 	} catch {
 		redirect(sessionExpiredUrl((await headers()).get("x-pathname")));
 	}
-	if (role !== "producer") redirect("/market");
+	if (role === "admin") redirect(CERTIFICATION_ROUTES.adminList);
 
 	return (
 		<div className="min-h-screen bg-gray-50">

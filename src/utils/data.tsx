@@ -31,6 +31,8 @@ export type MenuSection = {
 	href: string;
 	type: string;
 	roles?: string[];
+	// Destino por papel (sem entrada = `href`)
+	hrefByRole?: Record<string, string>;
 };
 
 export const sectionsListData: { group: string; sections: MenuSection[] }[] = [
@@ -92,8 +94,8 @@ export const sectionsListData: { group: string; sections: MenuSection[] }[] = [
 				title: "Certificações",
 				href: "/market/certifications/farm",
 				type: "default",
-				// Só aparece para esses papéis (sem `roles` = todos)
-				roles: ["producer"],
+				// Todos os papéis: o mesmo usuário pode comprar e vender. Admin vai para a fila de avaliação.
+				hrefByRole: { admin: "/admin/certifications/farm" },
 			},
 		],
 	},
@@ -547,6 +549,8 @@ export const fruitsCategories = [
 export function sectionsForRole(role?: string | null) {
 	return sectionsListData.map((g) => ({
 		...g,
-		sections: g.sections.filter((s) => !s.roles || (role != null && s.roles.includes(role))),
+		sections: g.sections
+			.filter((s) => !s.roles || (role != null && s.roles.includes(role)))
+			.map((s) => (role && s.hrefByRole?.[role] ? { ...s, href: s.hrefByRole[role] } : s)),
 	}));
 }
