@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { useShoppingCartStore } from "@/store/shoppingCartStore";
 import { useUserStore } from "@/store/userInfoStore";
-import { recentSearchesData, sectionsListData } from "@/utils/data";
+import { recentSearchesData, sectionsForRole } from "@/utils/data";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 import {
 	ChevronDown,
@@ -219,7 +219,7 @@ export default function Navbar({ searchedItem = "" }: NavbarProps) {
 											</div>
 										</div>
 										<div>
-											{sectionsListData.map((g, _) => {
+											{sectionsForRole(user?.role).map((g, _) => {
 												return (
 													<div
 														key={_}
