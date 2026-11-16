@@ -931,6 +931,8 @@ export type FarmCertification = {
 	reviewedAt: string | null;
 	rejectionReason: string | null;
 	reviewNotes: string | null;
+	// Versão dos dados; aumenta a cada reenvio. Avaliar com valor antigo → 409.
+	revision: number;
 	createdAt: string;
 	updatedAt: string;
 	// Selo no ar hoje. Use sempre este campo para exibir o selo, nunca só o status.

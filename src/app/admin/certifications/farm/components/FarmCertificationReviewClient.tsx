@@ -346,6 +346,7 @@ function ApproveDialog({ open, detail, onClose, onDone, onConflict }: DialogProp
 			setSubmitting(true);
 			setError(null);
 			const result = await approveFarmCertification(detail.id, {
+				revision: detail.revision,
 				documentId,
 				notes: notes.trim() || undefined,
 			});
@@ -438,7 +439,7 @@ function ReasonDialog({ kind, open, detail, onClose, onDone, onConflict }: Dialo
 		try {
 			setSubmitting(true);
 			setError(null);
-			const body = { reason: trimmed, notes: notes.trim() || undefined };
+			const body = { revision: detail.revision, reason: trimmed, notes: notes.trim() || undefined };
 			const result = isRevoke
 				? await revokeFarmCertification(detail.id, body)
 				: await rejectFarmCertification(detail.id, body);

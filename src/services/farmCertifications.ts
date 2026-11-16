@@ -155,6 +155,7 @@ export function getFarmCertificationBadge(userId: string) {
 }
 
 // ---------- Admin ----------
+// `revision` é o do detalhe que o admin analisou: se o produtor reenviou depois, a API responde 409.
 
 export function listAdminFarmCertifications(params: {
 	status?: FarmCertificationStatus;
@@ -172,21 +173,21 @@ export function listAdminFarmCertifications(params: {
 	return request<FarmCertificationAdminPage>(`${BASE}/admin?${qs.toString()}`);
 }
 
-export function approveFarmCertification(id: string, body: { documentId?: string; notes?: string }) {
+export function approveFarmCertification(id: string, body: { revision: number; documentId?: string; notes?: string }) {
 	return request<FarmCertificationDetail>(
 		`${BASE}/admin/${encodeURIComponent(id)}/approve`,
 		json("PATCH", body)
 	);
 }
 
-export function rejectFarmCertification(id: string, body: { reason: string; notes?: string }) {
+export function rejectFarmCertification(id: string, body: { revision: number; reason: string; notes?: string }) {
 	return request<FarmCertificationDetail>(
 		`${BASE}/admin/${encodeURIComponent(id)}/reject`,
 		json("PATCH", body)
 	);
 }
 
-export function revokeFarmCertification(id: string, body: { reason: string; notes?: string }) {
+export function revokeFarmCertification(id: string, body: { revision: number; reason: string; notes?: string }) {
 	return request<FarmCertificationDetail>(
 		`${BASE}/admin/${encodeURIComponent(id)}/revoke`,
 		json("PATCH", body)
