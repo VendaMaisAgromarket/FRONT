@@ -9,6 +9,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useNotificationsStore } from "@/store/notificationsStore";
 import { Dispatch, SetStateAction } from "react";
 
 interface ConfirmAddressExclusionModalProps {
@@ -22,8 +23,9 @@ export default function ConfirmAddressExclusionModal({
 	setIsOpen,
 	addressId,
 }: ConfirmAddressExclusionModalProps) {
+	const refreshUnreadCount = useNotificationsStore((s) => s.refreshUnreadCount);
 	async function handleDelete() {
-		await deleteAddress(addressId);
+		if (await deleteAddress(addressId)) refreshUnreadCount({ silent: true });
 	}
 
 	return (

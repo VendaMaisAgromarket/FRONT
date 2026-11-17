@@ -300,7 +300,7 @@ export default function OrdersClient({ focusSaleId }: { focusSaleId?: string }) 
 				)
 			);
 			setDialogOpen(false);
-			refreshUnreadCount();
+			refreshUnreadCount({ silent: true });
 		} catch (error) {
 			console.error("Erro ao atualizar:", error);
 			setUpdateError("Erro ao atualizar. Tente novamente.");

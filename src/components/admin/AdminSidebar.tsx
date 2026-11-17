@@ -1,16 +1,29 @@
 "use client";
 
+import {
+	CERTIFICATION_ROUTES,
+	PENDING_CHANGED_EVENT,
+} from "@/components/certifications/certificationUtils";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { listAdminFarmCertifications } from "@/services/farmCertifications";
 import {
 	AlertTriangle,
+	BadgeCheck,
+	ChevronDown,
+	CreditCard,
 	LayoutDashboard,
+	Route,
+	Ruler,
+	Settings,
 	Truck,
+	Users,
 	Wallet,
 	Workflow,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const navItems = [
 	{
@@ -43,6 +56,53 @@ const navItems = [
 		icon: Truck,
 		enabled: true,
 	},
+	{
+		title: "Certificações de fazenda",
+		href: CERTIFICATION_ROUTES.adminList,
+		icon: BadgeCheck,
+		enabled: true,
+		pendingCounter: true,
+	},
+];
+
+// Contador de pendentes: até 50 itens; "50+" quando houver mais páginas.
+function usePendingCertificationsCount(pathname: string) {
+	const [label, setLabel] = useState<string | null>(null);
+
+	useEffect(() => {
+		// Só a resposta da requisição mais recente é aplicada: uma resposta antiga que chegue
+		// depois (ex.: carga inicial vs. atualização pós-aprovação) não restaura um valor velho.
+		let generation = 0;
+		let active = true;
+		const load = () => {
+			const current = ++generation;
+			const isCurrent = () => active && current === generation;
+			listAdminFarmCertifications({ status: "PENDING", limit: 50 })
+				.then((p) => {
+					if (!isCurrent()) return;
+					const n = p.items.length;
+					setLabel(n === 0 ? null : p.nextCursor ? "50+" : String(n));
+				})
+				.catch(() => {
+					if (isCurrent()) setLabel(null);
+				});
+		};
+		load();
+		window.addEventListener(PENDING_CHANGED_EVENT, load);
+		return () => {
+			active = false;
+			window.removeEventListener(PENDING_CHANGED_EVENT, load);
+		};
+	}, [pathname]);
+
+	return label;
+}
+
+const settingsItems = [
+	{ title: "Usuários", href: "/admin/settings/users", icon: Users },
+	{ title: "Métodos de pagamento", href: "/admin/settings/payment-methods", icon: CreditCard },
+	{ title: "Unidades do produto", href: "/admin/settings/selling-units", icon: Ruler },
+	{ title: "Tipos de transporte", href: "/admin/settings/transport-types", icon: Route },
 ];
 
 export default function AdminSidebar({
@@ -51,12 +111,16 @@ export default function AdminSidebar({
 	onNavigate?: () => void;
 }) {
 	const pathname = usePathname();
+	const isSettingsRoute = pathname.startsWith("/admin/settings");
+	const [isSettingsOpen, setIsSettingsOpen] = useState(isSettingsRoute);
+	const pendingCount = usePendingCertificationsCount(pathname);
 
 	return (
 		<nav className="flex flex-col gap-1 p-3">
 			{navItems.map((item) => {
 				const Icon = item.icon;
-				const isActive = pathname === item.href;
+				const isActive =
+					pathname === item.href || (item.pendingCounter && pathname.startsWith(`${item.href}/`));
 
 				if (!item.enabled) {
 					return (
@@ -88,10 +152,68 @@ export default function AdminSidebar({
 						)}
 					>
 						<Icon size={18} />
-						{item.title}
+						<span className="flex-1">{item.title}</span>
+						{item.pendingCounter && pendingCount && (
+							<span
+								className={cn(
+									"min-w-5 rounded-full px-1.5 text-center text-xs font-semibold",
+									isActive ? "bg-white text-primary" : "bg-primary text-primary-foreground"
+								)}
+								aria-label={`${pendingCount} pendentes`}
+							>
+								{pendingCount}
+							</span>
+						)}
 					</Link>
 				);
 			})}
+
+			<div className="mt-1 border-t border-t-gray-5 pt-2">
+				<button
+					type="button"
+					onClick={() => setIsSettingsOpen((open) => !open)}
+					aria-expanded={isSettingsOpen}
+					className={cn(
+						"flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-sm transition-colors cursor-pointer",
+						isSettingsRoute ? "text-primary font-medium" : "text-foreground/80",
+						"hover:bg-muted"
+					)}
+				>
+					<span className="flex items-center gap-2">
+						<Settings size={18} />
+						Configurações
+					</span>
+					<ChevronDown
+						size={16}
+						className={cn("transition-transform", isSettingsOpen && "rotate-180")}
+					/>
+				</button>
+
+				{isSettingsOpen && (
+					<div className="mt-1 flex flex-col gap-1 pl-4">
+						{settingsItems.map((item) => {
+							const Icon = item.icon;
+							const isActive = pathname === item.href;
+							return (
+								<Link
+									key={item.href}
+									href={item.href}
+									onClick={onNavigate}
+									className={cn(
+										"flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+										isActive
+											? "bg-primary text-primary-foreground"
+											: "text-foreground/80 hover:bg-muted"
+									)}
+								>
+									<Icon size={16} />
+									{item.title}
+								</Link>
+							);
+						})}
+					</div>
+				)}
+			</div>
 		</nav>
 	);
 }

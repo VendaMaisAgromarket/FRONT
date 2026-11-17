@@ -1,7 +1,12 @@
 "use server";
 
-import { signInSchema, SignUpFormValues } from "@/lib/schemas";
-import { createSession } from "@/lib/session";
+import {
+	forgotPasswordSchema,
+	resetPasswordSchema,
+	signInSchema,
+	SignUpFormValues,
+} from "@/lib/schemas";
+import { createSession, deleteSession } from "@/lib/session";
 import { SignInFormState } from "@/types/types";
 import mapUserTypeToRole from "@/utils/mappers/userTypeToRole";
 import { jwtDecode } from "jwt-decode";
@@ -124,6 +129,103 @@ export async function signUp(data: SignUpFormValues) {
 			success: false,
 			message:
 				"Ocorreu um erro inesperado no servidor. Por favor tente novamente.",
+		};
+	}
+}
+
+export type PasswordResetRequestResult =
+	| { ok: true; message: string }
+	| { ok: false; message: string };
+
+export async function requestPasswordReset(
+	email: string
+): Promise<PasswordResetRequestResult> {
+	const result = forgotPasswordSchema.safeParse({ email });
+	if (!result.success) {
+		return { ok: false, message: "Informe um e-mail válido." };
+	}
+
+	try {
+		const res = await fetch(`${process.env.API_URL}/user/send-reset-password`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ email: result.data.email }),
+		});
+		const data = await res.json().catch(() => ({}));
+
+		if (!res.ok) {
+			return {
+				ok: false,
+				message: data.error ?? "Erro ao solicitar redefinição de senha.",
+			};
+		}
+		// A resposta é a mesma exista ou não a conta — não inferir nada dela.
+		return { ok: true, message: data.message };
+	} catch (err) {
+		console.error("Erro ao solicitar redefinição de senha: ", err);
+		return {
+			ok: false,
+			message: "Erro ao solicitar redefinição de senha. Tente novamente.",
+		};
+	}
+}
+
+export type ResetPasswordResult =
+	| { ok: true }
+	| {
+			ok: false;
+			reason: "invalid-link" | "weak-password" | "error";
+			message: string;
+	  };
+
+export async function resetPassword(
+	token: string,
+	newPassword: string
+): Promise<ResetPasswordResult> {
+	if (!token) {
+		return { ok: false, reason: "invalid-link", message: "Link inválido." };
+	}
+	const parsed = resetPasswordSchema.safeParse({
+		newPassword,
+		confirmPassword: newPassword,
+	});
+	if (!parsed.success) {
+		return {
+			ok: false,
+			reason: "weak-password",
+			message: parsed.error.flatten().fieldErrors.newPassword?.[0] ?? "Senha inválida.",
+		};
+	}
+
+	try {
+		const res = await fetch(`${process.env.API_URL}/user/change-password`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ token, newPassword }),
+		});
+		const data = await res.json().catch(() => ({}));
+
+		if (!res.ok) {
+			const error: string = data.error ?? "Erro ao alterar senha.";
+			if (res.status === 400 && error.includes("inválido ou expirado")) {
+				return { ok: false, reason: "invalid-link", message: error };
+			}
+			if (res.status === 400 && error.includes("A senha deve")) {
+				return { ok: false, reason: "weak-password", message: error };
+			}
+			return { ok: false, reason: "error", message: error };
+		}
+
+		// O back invalida todos os JWTs emitidos antes da troca — a sessão local não vale mais.
+		await deleteSession();
+		return { ok: true };
+	} catch (err) {
+		// Não logar o token.
+		console.error("Erro ao redefinir senha: ", (err as Error)?.message);
+		return {
+			ok: false,
+			reason: "error",
+			message: "Erro ao alterar senha. Tente novamente.",
 		};
 	}
 }

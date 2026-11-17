@@ -1,6 +1,8 @@
 import { getUserCartData } from "@/actions/cart";
+import SessionExpiryGuard from "@/components/SessionExpiryGuard";
 import StoreInitializer from "@/components/userStoreInitializer";
-import { cookies } from "next/headers";
+import { sessionExpiredUrl } from "@/lib/authRedirect";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
 
@@ -20,7 +22,7 @@ export default async function SessionProvider({
 			headers: { Cookie: `session=${sessionCookie}` },
 		});
 		if (!userRes.ok) {
-			redirect("/api/auth/expired");
+			redirect(sessionExpiredUrl((await headers()).get("x-pathname")));
 		}
 		user = await userRes.json();
 		const res = await getUserCartData();
@@ -46,6 +48,7 @@ export default async function SessionProvider({
 	return (
 		<>
 			<StoreInitializer user={user} cart={cartItems} />
+			<SessionExpiryGuard />
 			{children}
 		</>
 	);

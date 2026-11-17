@@ -1,4 +1,5 @@
 import {
+	BadgeCheck,
 	Bell,
 	Apple,
 	ArrowDownAZ,
@@ -24,7 +25,17 @@ export const recentSearchesData = [
 	{ id: 5, searched: "Abacaxi" },
 ];
 
-export const sectionsListData = [
+export type MenuSection = {
+	icon: React.ReactNode;
+	title: string;
+	href: string;
+	type: string;
+	roles?: string[];
+	// Destino por papel (sem entrada = `href`)
+	hrefByRole?: Record<string, string>;
+};
+
+export const sectionsListData: { group: string; sections: MenuSection[] }[] = [
 	{
 		group: "Pessoal",
 		sections: [
@@ -77,6 +88,14 @@ export const sectionsListData = [
 				title: "Painel de vendas",
 				href: "/market/orders",
 				type: "default",
+			},
+			{
+				icon: <BadgeCheck size={20} />,
+				title: "Certificações",
+				href: "/market/certifications/farm",
+				type: "default",
+				// Todos os papéis: o mesmo usuário pode comprar e vender. Admin vai para a fila de avaliação.
+				hrefByRole: { admin: "/admin/certifications/farm" },
 			},
 		],
 	},
@@ -525,3 +544,13 @@ export const fruitsCategories = [
 		imageAlt: "Alface",
 	},
 ];
+
+// Itens de menu visíveis para o papel do usuário logado
+export function sectionsForRole(role?: string | null) {
+	return sectionsListData.map((g) => ({
+		...g,
+		sections: g.sections
+			.filter((s) => !s.roles || (role != null && s.roles.includes(role)))
+			.map((s) => (role && s.hrefByRole?.[role] ? { ...s, href: s.hrefByRole[role] } : s)),
+	}));
+}

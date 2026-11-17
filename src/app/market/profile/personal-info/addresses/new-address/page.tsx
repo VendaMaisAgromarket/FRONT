@@ -3,6 +3,7 @@
 import { createAddress } from "@/actions/address";
 import { AddressFormValues } from "@/lib/schemas";
 import TanstackProvider from "@/providers/tanstackProvider";
+import { useNotificationsStore } from "@/store/notificationsStore";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -12,10 +13,12 @@ export default function AddAddressPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const redirect = searchParams.get("redirect");
+	const refreshUnreadCount = useNotificationsStore((s) => s.refreshUnreadCount);
 
 	async function onSubmit(data: AddressFormValues) {
 		try {
 			await createAddress(data);
+			refreshUnreadCount({ silent: true });
 			toast.success("Endereço cadastrado com sucesso!");
 			router.push(redirect ?? "/market/profile/personal-info/addresses");
 		} catch (err) {

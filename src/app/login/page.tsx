@@ -1,10 +1,21 @@
 // src/app/login/page.tsx
 import LoginForm from "@/components/login/LoginForm";
+import { LOGIN_NOTICES, LoginReason, safeRedirectPath } from "@/lib/authRedirect";
 import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reason?: string; redirect?: string }>;
+}) {
+  const { reason, redirect } = await searchParams;
+  const notice =
+    reason && reason in LOGIN_NOTICES
+      ? LOGIN_NOTICES[reason as LoginReason]
+      : undefined;
+
   return (
     <main className="bg-background flex flex-col min-h-screen md:flex-row items-start">
       {/* Esquerda: Formulário */}
@@ -25,7 +36,7 @@ export default function LoginPage() {
           />
         </div>
         {/* Componente de formulário (client) */}
-        <LoginForm />
+        <LoginForm notice={notice} redirectTo={safeRedirectPath(redirect)} />
       </section>
 
       {/* Direita: Imagem */}

@@ -7,6 +7,12 @@ export default async function middleware(req: NextRequest) {
   const currPath = req.nextUrl.pathname;
   const isProtectedRoute = protectedRoutes.includes(currPath);
 
+  // Layouts (Server Components) não têm acesso à URL: repassamos a rota atual para que,
+  // se a sessão for rejeitada pelo back, o login saiba para onde voltar (?redirect=).
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", currPath + req.nextUrl.search);
+  const next = () => NextResponse.next({ request: { headers: requestHeaders } });
+
   if (isProtectedRoute) {
     const cookie = (await cookies()).get("session")?.value;
     const session = await decrypt(cookie);
@@ -18,9 +24,9 @@ export default async function middleware(req: NextRequest) {
     if (!session && currPath !== "/") {
       return NextResponse.redirect(new URL("/login", req.nextUrl));
     }
-
-    return NextResponse.next();
   }
+
+  return next();
 }
 
 export const config = {

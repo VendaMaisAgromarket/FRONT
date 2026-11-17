@@ -11,6 +11,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import mapUserTypeToFancyName from '@/utils/mappers/userTypeToFancyname';
 import { signUp } from '@/actions/auth';
+import { CERTIFICATION_ROUTES } from '@/components/certifications/certificationUtils';
+import { loginUrl } from '@/lib/authRedirect';
 import { SignUpFormValues } from '@/lib/schemas';
 import { toast } from 'sonner';
 import { FirstPageSignUpForm } from './FirstPageSignUpForm';
@@ -79,7 +81,13 @@ export default function RegisterForm({
 		if (res.success) {
 			setIsSubmitting(false);
 
-			router.push('/login');
+			// Produtor: depois de entrar, mostra o passo opcional "Sua fazenda tem certificação?"
+			// (o cadastro é público e não recebe a certificação).
+			router.push(
+				data.userType === 'farmer'
+					? loginUrl(undefined, `${CERTIFICATION_ROUTES.producerList}?onboarding=1`)
+					: '/login'
+			);
 			return toast.success(res.message);
 		}
 

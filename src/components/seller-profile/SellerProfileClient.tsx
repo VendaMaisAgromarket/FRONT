@@ -108,6 +108,7 @@ export default function SellerProfileClient({ sellerId }: SellerProfileClientPro
             <SellerProfileHeader
                 name={seller.name}
                 img={seller.img}
+                sellerId={sellerId}
             />
 
             <CategoryNavigation
