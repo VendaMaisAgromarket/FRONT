@@ -1,6 +1,9 @@
 'use client';
 
 import { addProductToCart } from '@/actions/cart';
+import type { ProductHarvestCertification, SellerFarmCertification } from '@/types/types';
+import FarmCertifiedBadge from '@/components/certifications/FarmCertifiedBadge';
+import HarvestCertifiedBadge from '@/components/certifications/HarvestCertifiedBadge';
 import {
 	Accordion,
 	AccordionContent,
@@ -48,6 +51,10 @@ type ProductBuyingInfo = {
 	sellerName: string;
 	isNegotiable: boolean;
 	harvestAt: string;
+	// Selo de safra (só quando a certificação vinculada está aprovada e válida hoje)
+	harvestCertification?: ProductHarvestCertification | null;
+	// Selo de fazenda do vendedor (já filtrado pelas certificações ativas)
+	farmCertifications?: SellerFarmCertification[];
 };
 
 type ProductHarvestStatus = keyof typeof harvestAtStyles;
@@ -62,6 +69,8 @@ const CompraProduto = ({
 	sellerName,
 	isNegotiable,
 	harvestAt,
+	harvestCertification,
+	farmCertifications,
 }: ProductBuyingInfo) => {
 	const [quantity, setQuantity] = useState(1);
 	const [selectedUnit, setSelectedUnit] = useState<{
@@ -252,6 +261,13 @@ const CompraProduto = ({
 			{/* Right side - Product Info */}
 			<div className="lg:w-4/5">
 				<h1 className="text-2xl font-bold text-gray-900">{productName}</h1>
+				{/* Selos logo abaixo do nome, acima das datas e do preço */}
+				{(farmCertifications?.length || harvestCertification) && (
+					<div className="mt-2 flex flex-wrap gap-2">
+						<FarmCertifiedBadge certifications={farmCertifications} size="md" />
+						<HarvestCertifiedBadge certification={harvestCertification} size="md" />
+					</div>
+				)}
 				<p className="text-sm text-gray-600 mt-1">
 					Anunciado em: {formatDate(createdAt)}
 				</p>

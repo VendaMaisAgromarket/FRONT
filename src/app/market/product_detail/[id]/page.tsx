@@ -64,6 +64,8 @@ export default async function ProductDetail({
 				sellerName={res.seller.name}
 				createdAt={res.createdAt}
 				harvestAt={res.harvestAt}
+				harvestCertification={res.harvestCertification}
+				farmCertifications={res.seller.farmCertifications}
 				isNegotiable={res.isNegotiable}
 			/>
 
