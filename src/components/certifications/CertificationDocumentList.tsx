@@ -1,28 +1,29 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { openFarmCertificationDocument } from "@/services/farmCertifications";
-import { FarmCertificationDocument } from "@/types/types";
+import { openCertificationDocument } from "@/services/certifications";
+import { CertificationDocument, CertificationScope } from "@/types/types";
 import { ExternalLink, FileText, ImageIcon, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DOC_TYPE_LABELS, formatCalendarDate, formatFileSize } from "./certificationUtils";
 
 type Props = {
+	scope?: CertificationScope;
 	certificationId: string;
-	documents: FarmCertificationDocument[];
+	documents: CertificationDocument[];
 	// Ação extra por documento (ex.: pré-visualização no admin)
-	renderExtra?: (doc: FarmCertificationDocument) => React.ReactNode;
+	renderExtra?: (doc: CertificationDocument) => React.ReactNode;
 };
 
 // Cada clique em "Abrir" busca uma URL assinada nova (expira em 10 min); nada é guardado.
-export default function CertificationDocumentList({ certificationId, documents, renderExtra }: Props) {
+export default function CertificationDocumentList({ scope = "farm", certificationId, documents, renderExtra }: Props) {
 	const [opening, setOpening] = useState<string | null>(null);
 
 	async function handleOpen(docId: string) {
 		try {
 			setOpening(docId);
-			await openFarmCertificationDocument(certificationId, docId);
+			await openCertificationDocument(scope, certificationId, docId);
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : "Não foi possível abrir o documento.");
 		} finally {

@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { readProductById } from "@/actions/product";
+import ProductHarvestCertificationSection from "@/components/certifications/ProductHarvestCertificationSection";
 import EditProductForm from "./components/EditProductForm";
 
 interface PageProps {
@@ -23,6 +24,10 @@ export default async function EditProductPage({ params }: PageProps) {
 	return (
 		<section className="max-w-7xl mx-auto p-6">
 			<EditProductForm productId={id} />
+			<ProductHarvestCertificationSection
+				productId={id}
+				harvestCertificationId={product.harvestCertificationId ?? null}
+			/>
 		</section>
 	);
 }

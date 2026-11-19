@@ -18,6 +18,7 @@ import {
 	AlertDialogTrigger,
 } from '../ui/alert-dialog';
 import AmountSelector from './AmountSelector';
+import { HarvestCertifiedBadgeByProduct } from '../certifications/HarvestCertifiedBadge';
 
 interface CartItemProps {
 	isSelected: boolean;
@@ -105,6 +106,10 @@ export default function CartItem({
 							<p className="text-sm text-gray-500">
 								{data.sellingUnitProduct.unit.title}
 							</p>
+							<HarvestCertifiedBadgeByProduct
+								productId={data.product.id}
+								className="mt-1"
+							/>
 						</div>
 					</div>
 				</div>

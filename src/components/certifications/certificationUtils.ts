@@ -1,8 +1,11 @@
 import {
+	CertificationScope,
 	FarmCertificationDocType,
 	FarmCertificationEventAction,
 	FarmCertificationStatus,
 	FarmCertificationType,
+	HarvestCertificationType,
+	ProductionUnit,
 } from "@/types/types";
 import { brasiliaDateKey } from "@/utils/functions";
 
@@ -15,8 +18,27 @@ export const CERTIFICATION_ROUTES = {
 	adminDetail: (id: string) => `/admin/certifications/farm/${encodeURIComponent(id)}`,
 } as const;
 
+// Rotas por escopo (fazenda | safra). Também usadas pelo back nos e-mails e notificações.
+export function certificationRoutes(scope: CertificationScope) {
+	const enc = encodeURIComponent;
+	return {
+		list: `/market/certifications/${scope}`,
+		new: `/market/certifications/${scope}/new`,
+		edit: (id: string) => `/market/certifications/${scope}/${enc(id)}/edit`,
+		// Lista com o detalhe já aberto (ex.: depois de enviar uma safra, para vincular anúncios)
+		listWithDetail: (id: string) => `/market/certifications/${scope}?open=${enc(id)}`,
+		adminList: `/admin/certifications/${scope}`,
+		adminDetail: (id: string) => `/admin/certifications/${scope}/${enc(id)}`,
+	};
+}
+
+export const SCOPE_LABELS: Record<CertificationScope, string> = {
+	farm: "Fazenda",
+	harvest: "Safra",
+};
+
 // Disparado após aprovar/recusar/revogar: o menu do admin atualiza o contador de pendentes
-export const PENDING_CHANGED_EVENT = "farm-certifications:pending-changed";
+export const PENDING_CHANGED_EVENT = "certifications:pending-changed";
 
 export const CERTIFICATION_TYPE_LABELS: Record<FarmCertificationType, string> = {
 	ORGANIC_SISORG: "Orgânico (SisOrg)",
@@ -129,4 +151,86 @@ export function formatArea(value: string | number): string {
 	return Number.isFinite(n)
 		? `${n.toLocaleString("pt-BR", { maximumFractionDigits: 4 })} ha`
 		: String(value);
+}
+
+// ---------- Safra ----------
+
+export const HARVEST_TYPE_LABELS: Record<HarvestCertificationType, string> = {
+	TRACEABILITY: "Rastreabilidade",
+	RESIDUE_ANALYSIS: "Análise de resíduos",
+	ORGANIC: "Orgânico",
+	GLOBALGAP: "GlobalG.A.P.",
+	OTHER: "Outra",
+};
+
+export const HARVEST_TYPES = Object.keys(HARVEST_TYPE_LABELS) as HarvestCertificationType[];
+
+export const PRODUCTION_UNIT_LABELS: Record<ProductionUnit, string> = { KG: "kg", TON: "t" };
+
+// Rótulo do tipo, para telas comuns aos dois escopos
+export function certificationTypeLabel(scope: CertificationScope, type: string): string {
+	const labels: Record<string, string> = scope === "farm" ? CERTIFICATION_TYPE_LABELS : HARVEST_TYPE_LABELS;
+	return labels[type] ?? type;
+}
+
+export function certificationTypeOptions(scope: CertificationScope): [string, string][] {
+	return Object.entries(scope === "farm" ? CERTIFICATION_TYPE_LABELS : HARVEST_TYPE_LABELS);
+}
+
+// Ano agrícola: "2026/27" (o segundo ano é o seguinte) ou um ano só, "2026". Mesma regra do back.
+const HARVEST_SEASON_RE = /^(\d{4})(?:\/(\d{2}))?$/;
+
+export function harvestSeasonYears(season: string): number[] | null {
+	const m = HARVEST_SEASON_RE.exec(season);
+	if (!m) return null;
+	const first = Number(m[1]);
+	if (!m[2]) return [first];
+	const second = first + 1;
+	return Number(m[2]) === second % 100 ? [first, second] : null;
+}
+
+// Opções do select: anos agrícolas próximos e os anos únicos correspondentes
+export function harvestSeasonOptions(current?: string): string[] {
+	const year = Number(todayKey().slice(0, 4));
+	const opts: string[] = [];
+	for (let y = year - 1; y <= year + 1; y++) opts.push(`${y}/${String((y + 1) % 100).padStart(2, "0")}`);
+	for (let y = year - 1; y <= year + 1; y++) opts.push(String(y));
+	// Na correção, mantém o valor salvo mesmo se já estiver fora da janela
+	if (current && !opts.includes(current)) opts.unshift(current);
+	return opts;
+}
+
+// "Tomate Italiano — safra 2026/27 · Talhão 3"
+export function harvestTitle(c: { crop: string; variety: string | null; harvestSeason: string; plotIdentifier?: string }) {
+	const name = [c.crop, c.variety].filter(Boolean).join(" ");
+	return `${name} — safra ${c.harvestSeason}${c.plotIdentifier ? ` · ${c.plotIdentifier}` : ""}`;
+}
+
+export function formatDecimal(value: string | number, suffix = ""): string {
+	const n = Number(value);
+	return Number.isFinite(n)
+		? `${n.toLocaleString("pt-BR", { maximumFractionDigits: 4 })}${suffix ? ` ${suffix}` : ""}`
+		: String(value);
+}
+
+// Sem acento e minúsculo, para comparar cultura com nome/variedade/categoria do anúncio
+export function normalizeText(v: string | null | undefined): string {
+	return (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Prévia (no cliente) das regras de vínculo do back, só para destacar anúncios compatíveis.
+ * Quem decide é a API.
+ */
+export function isProductCompatible(
+	cert: { crop: string; plantingDate: string; validUntil: string },
+	product: { name: string; variety?: string | null; category?: string | null; harvestAt: string }
+): boolean {
+	const crop = normalizeText(cert.crop);
+	const cropMatches = [product.name, product.variety, product.category]
+		.map(normalizeText)
+		.filter(Boolean)
+		.some((f) => f.includes(crop) || crop.includes(f));
+	const harvest = isoToDateInput(product.harvestAt);
+	return cropMatches && harvest >= isoToDateInput(cert.plantingDate) && harvest <= isoToDateInput(cert.validUntil);
 }

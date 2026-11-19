@@ -1,5 +1,5 @@
-import { CERTIFICATION_ROUTES } from "@/components/certifications/certificationUtils";
-import { AppNotification } from "@/types/types";
+import { certificationRoutes } from "@/components/certifications/certificationUtils";
+import { AppNotification, CertificationScope } from "@/types/types";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -14,6 +14,7 @@ import {
 	RefreshCw,
 	Scale,
 	Sprout,
+	Wheat,
 	UserRoundCog,
 	Wallet,
 	XCircle,
@@ -39,6 +40,13 @@ const iconByType: Record<string, LucideIcon> = {
 	FARM_CERTIFICATION_REVOKED: ShieldX,
 	FARM_CERTIFICATION_EXPIRING: ShieldAlert,
 	FARM_CERTIFICATION_EXPIRED: ShieldAlert,
+	// Safra: ícone próprio (trigo) para diferenciar da fazenda
+	HARVEST_CERTIFICATION_SUBMITTED: Wheat,
+	HARVEST_CERTIFICATION_APPROVED: Wheat,
+	HARVEST_CERTIFICATION_REJECTED: ShieldX,
+	HARVEST_CERTIFICATION_REVOKED: ShieldX,
+	HARVEST_CERTIFICATION_EXPIRING: ShieldAlert,
+	HARVEST_CERTIFICATION_EXPIRED: ShieldAlert,
 };
 
 export function getNotificationIcon(type: string): LucideIcon {
@@ -58,17 +66,25 @@ export const NOTIFICATION_ROUTES = {
 // ORDER_ACCEPTED, WEIGHT_REGISTERED…) chega para comprador e vendedor. Perfil e endereços vão
 // para as páginas do perfil (nunca para um endereço específico: ele pode ter sido removido).
 // O lembrete de colheita abre a edição do anúncio. Tipo desconhecido sem saleId/productId → sem link.
-// Certificação de fazenda (sem saleId/productId): admin → tela de avaliação; produtor → lista.
+// Certificações (sem saleId/productId): admin → tela de avaliação; dono → lista do escopo.
+// O escopo vem de `data.scope`; notificações antigas de fazenda não têm `scope` → "farm".
 export function getNotificationHref(n: AppNotification): string | null {
-	if (n.type.startsWith("FARM_CERTIFICATION_") || n.data?.certificationId) {
+	const isCertification =
+		n.type.startsWith("FARM_CERTIFICATION_") ||
+		n.type.startsWith("HARVEST_CERTIFICATION_") ||
+		!!n.data?.certificationId;
+	if (isCertification) {
+		const scope: CertificationScope =
+			n.data?.scope === "harvest" || (!n.data?.scope && n.type.startsWith("HARVEST_CERTIFICATION_"))
+				? "harvest"
+				: "farm";
+		const routes = certificationRoutes(scope);
 		const certificationId = n.data?.certificationId;
-		const isAdmin = n.data?.role === "admin" || n.type === "FARM_CERTIFICATION_SUBMITTED";
+		const isAdmin = n.data?.role === "admin" || n.type.endsWith("_CERTIFICATION_SUBMITTED");
 		if (isAdmin) {
-			return certificationId
-				? CERTIFICATION_ROUTES.adminDetail(String(certificationId))
-				: CERTIFICATION_ROUTES.adminList;
+			return certificationId ? routes.adminDetail(String(certificationId)) : routes.adminList;
 		}
-		return CERTIFICATION_ROUTES.producerList;
+		return routes.list;
 	}
 
 	if (n.type === "PROFILE_UPDATED") return NOTIFICATION_ROUTES.profile;

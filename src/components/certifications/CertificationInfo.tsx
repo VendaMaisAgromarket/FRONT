@@ -1,9 +1,12 @@
-import { FarmCertification } from "@/types/types";
+import { FarmCertification, HarvestCertification } from "@/types/types";
 import { ReactNode } from "react";
 import {
 	CERTIFICATION_TYPE_LABELS,
+	HARVEST_TYPE_LABELS,
+	PRODUCTION_UNIT_LABELS,
 	formatArea,
 	formatCalendarDate,
+	formatDecimal,
 } from "./certificationUtils";
 
 export function InfoSection({ title, children }: { title: string; children: ReactNode }) {
@@ -49,6 +52,43 @@ export default function CertificationInfo({ certification: c }: { certification:
 						["Tipo", CERTIFICATION_TYPE_LABELS[c.type] ?? c.type],
 						["Certificadora", c.certifierName],
 						["CNPJ da certificadora", c.certifierCnpj],
+						["Número do certificado", c.certificateNumber],
+						["Emissão", formatCalendarDate(c.issuedAt)],
+						["Validade", formatCalendarDate(c.validUntil)],
+					]}
+				/>
+			</InfoSection>
+		</div>
+	);
+}
+
+// Blocos "Safra" e "Certificado" (dono ou admin)
+export function HarvestCertificationInfo({ certification: c }: { certification: HarvestCertification }) {
+	return (
+		<div className="space-y-6">
+			<InfoSection title="Safra">
+				<InfoGrid
+					items={[
+						["Cultura", c.crop],
+						["Variedade", c.variety],
+						["Ano agrícola", c.harvestSeason],
+						["Talhão/lote", c.plotIdentifier],
+						["Área plantada", formatArea(c.plantedAreaHectares)],
+						[
+							"Produção estimada",
+							formatDecimal(c.estimatedProduction, PRODUCTION_UNIT_LABELS[c.productionUnit] ?? c.productionUnit),
+						],
+						["Plantio", formatCalendarDate(c.plantingDate)],
+						["Colheita", formatCalendarDate(c.harvestDate)],
+					]}
+				/>
+			</InfoSection>
+			<InfoSection title="Certificado">
+				<InfoGrid
+					items={[
+						["Tipo", HARVEST_TYPE_LABELS[c.type] ?? c.type],
+						["Certificadora ou laboratório", c.certifierName],
+						["CNPJ", c.certifierCnpj],
 						["Número do certificado", c.certificateNumber],
 						["Emissão", formatCalendarDate(c.issuedAt)],
 						["Validade", formatCalendarDate(c.validUntil)],
