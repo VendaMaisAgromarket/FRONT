@@ -6,10 +6,12 @@ import {
 } from "@/components/certifications/certificationUtils";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { listAdminFarmCertifications } from "@/services/farmCertifications";
+import { listAdminCertifications } from "@/services/certifications";
+import { CertificationScope } from "@/types/types";
 import {
 	AlertTriangle,
 	BadgeCheck,
+	Wheat,
 	ChevronDown,
 	CreditCard,
 	LayoutDashboard,
@@ -61,12 +63,19 @@ const navItems = [
 		href: CERTIFICATION_ROUTES.adminList,
 		icon: BadgeCheck,
 		enabled: true,
-		pendingCounter: true,
+		pendingCounter: "farm" as CertificationScope,
+	},
+	{
+		title: "Certificações de safra",
+		href: "/admin/certifications/harvest",
+		icon: Wheat,
+		enabled: true,
+		pendingCounter: "harvest" as CertificationScope,
 	},
 ];
 
 // Contador de pendentes: até 50 itens; "50+" quando houver mais páginas.
-function usePendingCertificationsCount(pathname: string) {
+function usePendingCertificationsCount(scope: CertificationScope, pathname: string) {
 	const [label, setLabel] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -77,7 +86,7 @@ function usePendingCertificationsCount(pathname: string) {
 		const load = () => {
 			const current = ++generation;
 			const isCurrent = () => active && current === generation;
-			listAdminFarmCertifications({ status: "PENDING", limit: 50 })
+			listAdminCertifications(scope, { status: "PENDING", limit: 50 })
 				.then((p) => {
 					if (!isCurrent()) return;
 					const n = p.items.length;
@@ -93,7 +102,7 @@ function usePendingCertificationsCount(pathname: string) {
 			active = false;
 			window.removeEventListener(PENDING_CHANGED_EVENT, load);
 		};
-	}, [pathname]);
+	}, [scope, pathname]);
 
 	return label;
 }
@@ -113,14 +122,18 @@ export default function AdminSidebar({
 	const pathname = usePathname();
 	const isSettingsRoute = pathname.startsWith("/admin/settings");
 	const [isSettingsOpen, setIsSettingsOpen] = useState(isSettingsRoute);
-	const pendingCount = usePendingCertificationsCount(pathname);
+	const pendingCounts: Record<CertificationScope, string | null> = {
+		farm: usePendingCertificationsCount("farm", pathname),
+		harvest: usePendingCertificationsCount("harvest", pathname),
+	};
 
 	return (
 		<nav className="flex flex-col gap-1 p-3">
 			{navItems.map((item) => {
 				const Icon = item.icon;
 				const isActive =
-					pathname === item.href || (item.pendingCounter && pathname.startsWith(`${item.href}/`));
+					pathname === item.href || (!!item.pendingCounter && pathname.startsWith(`${item.href}/`));
+				const pendingCount = item.pendingCounter ? pendingCounts[item.pendingCounter] : null;
 
 				if (!item.enabled) {
 					return (

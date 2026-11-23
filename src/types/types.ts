@@ -168,6 +168,8 @@ export type MarketProductCardType = {
 		name: string;
 		farmCertifications?: SellerFarmCertification[];
 	};
+	// Selo de safra: só quando a certificação vinculada está aprovada e válida hoje
+	harvestCertification?: ProductHarvestCertification | null;
 };
 
 export type TransportTypeData = {
@@ -816,12 +818,20 @@ export type NotificationType =
 	| "FARM_CERTIFICATION_REJECTED"
 	| "FARM_CERTIFICATION_REVOKED"
 	| "FARM_CERTIFICATION_EXPIRING"
-	| "FARM_CERTIFICATION_EXPIRED";
+	| "FARM_CERTIFICATION_EXPIRED"
+	| "HARVEST_CERTIFICATION_SUBMITTED"
+	| "HARVEST_CERTIFICATION_APPROVED"
+	| "HARVEST_CERTIFICATION_REJECTED"
+	| "HARVEST_CERTIFICATION_REVOKED"
+	| "HARVEST_CERTIFICATION_EXPIRING"
+	| "HARVEST_CERTIFICATION_EXPIRED";
 
 export type NotificationData = {
 	// Certificação de fazenda usa "admin" | "producer"; vendas usam "buyer" | "seller"
 	role?: "buyer" | "seller" | "admin" | "producer";
-	// FARM_CERTIFICATION_*
+	// FARM_CERTIFICATION_* / HARVEST_CERTIFICATION_*
+	// Notificações antigas de fazenda não têm `scope`: tratar ausência como "farm"
+	scope?: CertificationScope;
 	certificationId?: string;
 	validUntil?: string;
 	reason?: string;
@@ -995,4 +1005,127 @@ export type SellerFarmCertification = {
 	type: FarmCertificationType;
 	certifierName: string;
 	validUntil: string;
+};
+
+// ---------- Certificações: tipos comuns a fazenda e safra ----------
+export type CertificationScope = "farm" | "harvest";
+export type CertificationStatus = FarmCertificationStatus;
+export type CertificationDocType = FarmCertificationDocType;
+export type CertificationDocument = FarmCertificationDocument;
+export type CertificationEvent = FarmCertificationEvent;
+
+// Campos que as telas comuns (detalhe, avaliação do admin, fila) usam
+export type CertificationBase = {
+	id: string;
+	userId: string;
+	type: string;
+	certifierName: string;
+	certifierCnpj: string;
+	certificateNumber: string;
+	issuedAt: string;
+	validUntil: string;
+	status: CertificationStatus;
+	revision: number;
+	reviewedAt: string | null;
+	rejectionReason: string | null;
+	createdAt: string;
+	updatedAt: string;
+	badgeActive: boolean;
+	documents: CertificationDocument[];
+};
+
+export type CertificationDetailBase = CertificationBase & {
+	reviewedBy: { id: string; name: string } | null;
+	events: CertificationEvent[];
+	user?: FarmCertificationDetail["user"];
+};
+
+// ---------- Certificação de safra (/certifications/harvest) ----------
+export type HarvestCertificationType =
+	| "TRACEABILITY"
+	| "RESIDUE_ANALYSIS"
+	| "ORGANIC"
+	| "GLOBALGAP"
+	| "OTHER";
+
+export type ProductionUnit = "KG" | "TON";
+
+export type HarvestLinkedProduct = {
+	id: string;
+	name: string;
+	variety: string | null;
+	harvestAt: string;
+	status: boolean;
+};
+
+export type HarvestCertification = {
+	id: string;
+	userId: string;
+	harvestSeason: string; // "2026/27" ou "2026"
+	crop: string;
+	variety: string | null;
+	plotIdentifier: string;
+	plantedAreaHectares: string; // decimal como string
+	estimatedProduction: string; // decimal como string
+	productionUnit: ProductionUnit;
+	plantingDate: string;
+	harvestDate: string;
+	type: HarvestCertificationType;
+	certifierName: string;
+	certifierCnpj: string;
+	certificateNumber: string;
+	issuedAt: string;
+	validUntil: string;
+	origin: "UPLOADED" | "PURCHASED";
+	status: CertificationStatus;
+	revision: number;
+	reviewedById: string | null;
+	reviewedAt: string | null;
+	rejectionReason: string | null;
+	reviewNotes: string | null;
+	createdAt: string;
+	updatedAt: string;
+	badgeActive: boolean;
+	documents: CertificationDocument[];
+	products: HarvestLinkedProduct[];
+};
+
+export type HarvestCertificationDetail = HarvestCertification & {
+	reviewedBy: { id: string; name: string } | null;
+	events: CertificationEvent[];
+	user?: FarmCertificationDetail["user"];
+};
+
+export type HarvestCertificationAdminItem = Omit<HarvestCertification, "documents" | "products" | "badgeActive"> & {
+	badgeActive?: boolean;
+	user: { id: string; name: string; email: string };
+	reviewedBy: { id: string; name: string } | null;
+	_count: { documents: number; products: number };
+};
+
+// Selo público de safra (em product.harvestCertification e no /product/:id/badge)
+export type ProductHarvestCertification = {
+	id: string;
+	type: HarvestCertificationType;
+	certifierName: string;
+	certificateNumber: string;
+	harvestSeason: string;
+	crop: string;
+	variety: string | null;
+	validUntil: string;
+};
+
+export type HarvestProductBadge = {
+	productId: string;
+	certified: boolean;
+	certification: ProductHarvestCertification | null;
+};
+
+export type HarvestLinkResult = {
+	id: string;
+	name: string;
+	variety: string | null;
+	harvestAt: string;
+	status: boolean;
+	harvestCertificationId: string | null;
 };
